@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import React, { useState, useMemo, useRef } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,46 +24,11 @@ import Toggle from "@/components/shared/ui/Toggle"
 import SectionCard from "@/components/admin/shared/SectionCard"
 import CategorySelect from "./CategorySelect"
 import FieldError from "../shared/FieldError"
-import { Attribute, CategoryNode, ProductImage, VariantCombo, VariantRowData } from "@/types/admin/product"
+import { Attribute, CategoryNode, ProductData, ProductImage, VariantRowData } from "@/types/admin/product"
+import { slugify, slugifyFinal, uid, buildProductVariantCombos } from "@/lib/helper"
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_IMAGE_SIZE_MB = 5
-
-const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
-
-const slugify = (value: string) =>
-  value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-
-function cartesian<T>(groups: T[][]): T[][] {
-  return groups.reduce<T[][]>(
-    (acc, group) =>
-      acc.length === 0 ? group.map((item) => [item]) : acc.flatMap((combo) => group.map((item) => [...combo, item])),
-    []
-  )
-}
-
-// --- Build combo for product variant attribute ---
-function buildCombos(selectedAttrs: Attribute[], selectedValueIds: number[]): VariantCombo[] {
-  const valueGroups = selectedAttrs.map((attr) =>
-    attr.values.filter((attrValue) => selectedValueIds.includes(attrValue.id))
-  )
-  return cartesian(valueGroups).map((row) => {
-    const ids = row.map((v) => v.id).sort((a, b) => a - b)
-    return {
-      key: ids.join("-"),
-      attrValueIds: ids,
-      label: row.map((v) => v.name).join(" / "),
-    }
-  })
-}
 
 // --- Default variant data ---
 const defaultVariantData = (): VariantRowData => ({
@@ -83,24 +48,13 @@ export default function ProductCreateForm({
     existingProductAttibutes
 } : { categories: CategoryNode[], existingProductAttibutes: Attribute[] }) 
 {
-  const [name, setName] = useState("")
-  const [slug, setSlug] = useState("")
   const [slugEditing, setSlugEditing] = useState(false)
   const [categoryId, setCategoryId] = useState<number | null>(null)
-  const [shortDescription, setShortDescription] = useState("")
-  const [description, setDescription] = useState("")
-  const [sku, setSku] = useState("")
 
   const [images, setImages] = useState<ProductImage[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [imagesError, setImagesError] = useState("")
-
-  const [price, setPrice] = useState("")
-  const [comparePrice, setComparePrice] = useState("")
-  const [costPrice, setCostPrice] = useState("")
-  const [weight, setWeight] = useState("")
-  const [weightUnit, setWeightUnit] = useState<"kg" | "g">("kg")
 
   const [hasVariants, setHasVariants] = useState(false)
   const [stockQuantity, setStockQuantity] = useState("")
@@ -121,15 +75,28 @@ export default function ProductCreateForm({
   const [saveAttempted, setSaveAttempted] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  const [productData, setProductData] = useState<ProductData>({
+    name: '',
+    slug: '',
+    shortDescription: '',
+    description: '',
+    sku: '',
+    price: '',
+    comparePrice: '',
+    costPrice: '',
+    weight: '',
+    weightUnit: 'kg'
+  })
+
   const tempIdRef = useRef(-1)
   const nextTempId = () => tempIdRef.current--
 
   const variantRows = useMemo(() => {
     const selectedAttrs = attributes.filter((attr) =>
-      attr.values.some((v) => selectedValueIds.includes(v.id))
+      attr.values.some((attributeValue) => selectedValueIds.includes(attributeValue.id))
     )
     if (selectedAttrs.length === 0) return []
-    return buildCombos(selectedAttrs, selectedValueIds).map((combo) => ({
+    return buildProductVariantCombos(selectedAttrs, selectedValueIds).map((combo) => ({
       ...combo,
       data: variantData[combo.key] ?? defaultVariantData(),
     }))
@@ -137,21 +104,50 @@ export default function ProductCreateForm({
 
   const hasErrors = Object.keys(errors).length > 0
 
-  const handleNameChange = (value: string) => {
-    setName(value)
-    if (!slugEditing) setSlug(slugify(value))
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    setProductData(prev => {
+
+      const updatedData = {
+        ...prev,
+        [name]: value
+      };
+
+      if (name === 'name' && !slugEditing) {
+        updatedData.slug = slugify(value);
+      }
+
+      if (name === 'slug' && slugEditing) {
+        updatedData.slug = slugify(value); 
+      }
+
+      return updatedData;
+    });
+
   }
+
+  const handleSlugBlur = () => {
+    setProductData(prev => ({
+      ...prev,
+      slug: slugifyFinal(prev.slug)
+    }));
+  };
 
   const regenerateSlug = () => {
-    setSlug(slugify(name))
+    setProductData(prev => ({
+      ...prev,
+      slug: slugify(productData.name)
+    }));
   }
 
+  // --- Add Product Images ---
   const addImageFiles = (files: FileList | File[]) => {
     const list = Array.from(files)
-    const valid = list.filter((f) => ACCEPTED_IMAGE_TYPES.includes(f.type))
+    const valid = list.filter((imageType) => ACCEPTED_IMAGE_TYPES.includes(imageType.type))
     const rejected = list.length - valid.length
-    const oversized = valid.filter((f) => f.size > MAX_IMAGE_SIZE_MB * 1024 * 1024)
-    const ok = valid.filter((f) => f.size <= MAX_IMAGE_SIZE_MB * 1024 * 1024)
+    const oversized = valid.filter((imageSize) => imageSize.size > MAX_IMAGE_SIZE_MB * 1024 * 1024)
+    const ok = valid.filter((imageSize) => imageSize.size <= MAX_IMAGE_SIZE_MB * 1024 * 1024)
 
     const messages: string[] = []
     if (rejected > 0) messages.push(`Skipped ${rejected} file(s). Only JPG, PNG, or WEBP images are allowed.`)
@@ -165,13 +161,20 @@ export default function ProductCreateForm({
         id: uid(),
         file,
         preview: URL.createObjectURL(file),
-        isPrimary: prev.length === 0,
+        isPrimary: false,
         sortOrder: prev.length,
       }))
+
+      if (added.length > 0 && !prev.some((img) => img.isPrimary)) {
+        added[0].isPrimary = true
+      }
+
       return [...prev, ...added].map((img, idx) => ({ ...img, sortOrder: idx }))
+
     })
   }
 
+  // --- Remove Product Images ---
   const removeImage = (id: string) => {
     setImages((prev) => {
       const target = prev.find((img) => img.id === id)
@@ -187,10 +190,12 @@ export default function ProductCreateForm({
     })
   }
 
+  // --- Set Product Primary Image ---
   const setPrimary = (id: string) => {
     setImages((prev) => prev.map((img) => ({ ...img, isPrimary: img.id === id })))
   }
 
+  // --- Reorder Product Image
   const reorderImage = (targetIndex: number) => {
     if (dragIndex === null || dragIndex === targetIndex) {
       setDragIndex(null)
@@ -205,35 +210,43 @@ export default function ProductCreateForm({
     setDragIndex(null)
   }
 
+  // --- Toggle product attribute ---
   const toggleAttribute = (attrId: number) => {
     const attr = attributes.find((a) => a.id === attrId)
     if (!attr) return
     setCheckedAttrs((prev) => {
+
       if (prev.includes(attrId)) {
-        setSelectedValueIds((vals) => vals.filter((id) => !attr.values.some((v) => v.id === id)))
+        setSelectedValueIds((vals) => vals.filter((id) => !attr.values.some((attrValue) => attrValue.id === id)))
         setExpandedAttrs((exp) => exp.filter((id) => id !== attrId))
         return prev.filter((id) => id !== attrId)
       }
+
       setSelectedValueIds((vals) => [
-        ...new Set([...vals, ...attr.values.map((v) => v.id)]),
+        ...new Set([...vals, ...attr.values.map((attrValue) => attrValue.id)]),
       ])
+
       setExpandedAttrs((exp) => (exp.includes(attrId) ? exp : [...exp, attrId]))
+      
       return [...prev, attrId]
+
     })
   }
 
+  // --- Toggle to expand the attribute to show the attribute values ---
   const toggleExpand = (attrId: number) => {
     setExpandedAttrs((prev) =>
       prev.includes(attrId) ? prev.filter((id) => id !== attrId) : [...prev, attrId]
     )
   }
 
+  // --- Toggle Product attribute value ---
   const toggleValue = (valueId: number) => {
     setSelectedValueIds((prev) => {
       const next = prev.includes(valueId)
         ? prev.filter((id) => id !== valueId)
         : [...prev, valueId]
-      const attr = attributes.find((a) => a.values.some((v) => v.id === valueId))
+      const attr = attributes.find((a) => a.values.some((attibuteValue) => attibuteValue.id === valueId))
       if (attr) {
         setCheckedAttrs((attrs) =>
           attrs.includes(attr.id) ? attrs : [...attrs, attr.id]
@@ -244,6 +257,7 @@ export default function ProductCreateForm({
     })
   }
 
+  // --- Add new product attribute value ---
   const addAttributeValue = (attrId: number) => {
     const value = (attrValueInputs[attrId] ?? "").trim()
     if (!value) return
@@ -259,6 +273,7 @@ export default function ProductCreateForm({
     setAttrValueInputs((prev) => ({ ...prev, [attrId]: "" }))
   }
 
+  // --- Add new product attribute ---
   const addNewAttribute = () => {
     const value = newAttributeName.trim()
     if (!value) return
@@ -269,6 +284,7 @@ export default function ProductCreateForm({
     setNewAttributeName("")
   }
 
+  // --- Fill up product variant information like sku, price and etc. ---
   const updateVariantData = (key: string, patch: Partial<VariantRowData>) => {
     setVariantData((prev) => ({
       ...prev,
@@ -276,6 +292,7 @@ export default function ProductCreateForm({
     }))
   }
 
+  // --- Add product variant image ---
   const handleVariantImage = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""
@@ -285,6 +302,7 @@ export default function ProductCreateForm({
     updateVariantData(key, { image: { file, preview: URL.createObjectURL(file) } })
   }
 
+  // --- Add Stock for all product variant ---
   const applyBulkStock = () => {
     if (bulkStock === "") return
     setVariantData((prev) => {
@@ -296,6 +314,7 @@ export default function ProductCreateForm({
     })
   }
 
+  // --- Set all product variant active ---
   const setAllActive = (active: boolean) => {
     setVariantData((prev) => {
       const next = { ...prev }
@@ -306,25 +325,26 @@ export default function ProductCreateForm({
     })
   }
 
+  // --- Validate all the information before send it to backend api ---
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = "Product name is required"
-    if (!slug.trim()) errs.slug = "Slug is required"
+    if (!productData.name.trim()) errs.name = "Product name is required"
+    if (!productData.slug.trim()) errs.slug = "Slug is required"
     if (!categoryId) errs.category = "Category is required"
 
     const num = (v: string) => parseFloat(v)
-    if (price === "" || isNaN(num(price)) || num(price) <= 0) {
+    if (productData.price === "" || isNaN(num(productData.price)) || num(productData.price) <= 0) {
       errs.price = "Base price must be a positive number"
-    } else if (!/^\d+(\.\d{1,2})?$/.test(price.trim())) {
+    } else if (!/^\d+(\.\d{1,2})?$/.test(productData.price.trim())) {
       errs.price = "Price must be a number with up to 2 decimal places"
     }
-    if (comparePrice !== "" && (isNaN(num(comparePrice)) || num(comparePrice) <= 0)) {
+    if (productData.comparePrice !== "" && (isNaN(num(productData.comparePrice)) || num(productData.comparePrice) <= 0)) {
       errs.comparePrice = "Compare price must be a positive number"
     }
-    if (costPrice !== "" && (isNaN(num(costPrice)) || num(costPrice) <= 0)) {
+    if (productData.costPrice !== "" && (isNaN(num(productData.costPrice)) || num(productData.costPrice) <= 0)) {
       errs.costPrice = "Cost price must be a positive number"
     }
-    if (weight !== "" && (isNaN(num(weight)) || num(weight) <= 0)) {
+    if (productData.weight !== "" && (isNaN(num(productData.weight)) || num(productData.weight) <= 0)) {
       errs.weight = "Weight must be a positive number"
     }
 
@@ -349,23 +369,25 @@ export default function ProductCreateForm({
     return Object.keys(errs).length === 0
   }
 
+  // --- Save all the product information ---
   const handleSave = (isActive: boolean) => {
+    console.log(productData)
     setSaveAttempted(true)
     setSaved(false)
     if (!validate()) return
 
     const payload = {
-      name,
-      slug,
+      name: productData.name,
+      slug: productData.slug,
       categoryId,
-      shortDescription: shortDescription || undefined,
-      description: description || undefined,
-      sku: sku || undefined,
-      price: parseFloat(price),
-      comparePrice: comparePrice ? parseFloat(comparePrice) : undefined,
-      costPrice: costPrice ? parseFloat(costPrice) : undefined,
-      weight: weight ? parseFloat(weight) : undefined,
-      weightUnit: weight ? weightUnit : undefined,
+      shortDescription: productData.shortDescription || undefined,
+      description: productData.description || undefined,
+      sku: productData.sku || undefined,
+      price: parseFloat(productData.price),
+      comparePrice: productData.comparePrice ? parseFloat(productData.comparePrice) : undefined,
+      costPrice: productData.costPrice ? parseFloat(productData.costPrice) : undefined,
+      weight: productData.weight ? parseFloat(productData.weight) : undefined,
+      weightUnit: productData.weight ? productData.weightUnit : undefined,
       hasVariants,
       stockQuantity: hasVariants ? undefined : parseInt(stockQuantity, 10),
       isActive,
@@ -426,8 +448,9 @@ export default function ProductCreateForm({
               <input
                 id="product-name"
                 type="text"
-                value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                value={productData.name}
+                name="name"
+                onChange={handleChange}
                 placeholder="e.g. Minimal Cotton T-Shirt"
                 className={`${inputClass} ${errors.name ? errorInputClass : ""}`}
               />
@@ -445,8 +468,10 @@ export default function ProductCreateForm({
                 <input
                   id="product-slug"
                   type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(slugify(e.target.value))}
+                  name="slug"
+                  value={productData.slug}
+                  onChange={handleChange}
+                  onBlur={handleSlugBlur}
                   readOnly={!slugEditing}
                   placeholder="auto-generated-from-name"
                   className={`flex-1 rounded-r-lg rounded-l-none border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-sm text-sidebar-foreground placeholder-sidebar-foreground/40 outline-none focus:border-sidebar-ring focus:ring-1 focus:ring-sidebar-ring transition-colors ${
@@ -493,10 +518,10 @@ export default function ProductCreateForm({
                 Category <span className="text-red-500">*</span>
               </label>
               <CategorySelect 
-              value={categoryId} 
-              onChange={setCategoryId} 
-              error={errors.category} 
-              categories={categories}
+                value={categoryId} 
+                onChange={setCategoryId} 
+                error={errors.category} 
+                categories={categories}
               />
             </div>
 
@@ -507,8 +532,9 @@ export default function ProductCreateForm({
               <input
                 id="product-sku"
                 type="text"
-                value={sku}
-                onChange={(e) => setSku(e.target.value)}
+                name="sku"
+                value={productData.sku}
+                onChange={handleChange}
                 placeholder="e.g. MCT-001"
                 className={inputClass}
               />
@@ -521,8 +547,9 @@ export default function ProductCreateForm({
               <input
                 id="product-short-description"
                 type="text"
-                value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
+                name="shortDescription"
+                value={productData.shortDescription}
+                onChange={handleChange}
                 placeholder="A short summary shown on product cards"
                 className={inputClass}
               />
@@ -534,8 +561,9 @@ export default function ProductCreateForm({
               </label>
               <textarea
                 id="product-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={productData.description}
+                name="description"
+                onChange={handleChange}
                 placeholder="Full product detail page description..."
                 rows={5}
                 className={`${inputClass} resize-y leading-relaxed`}
@@ -545,9 +573,9 @@ export default function ProductCreateForm({
         </SectionCard>
 
         <SectionCard
-          title="Images"
-          subtitle={`Add product photos. First image is set as primary — drag thumbnails to reorder. JPG, PNG or WEBP up to ${MAX_IMAGE_SIZE_MB}MB.`}
-        >
+            title="Images"
+            subtitle={`Add product photos. First image is set as primary — drag thumbnails to reorder. JPG, PNG or WEBP up to ${MAX_IMAGE_SIZE_MB}MB.`}
+          >
           <div
             onDragOver={(e) => {
               e.preventDefault()
@@ -605,7 +633,7 @@ export default function ProductCreateForm({
                     dragIndex === index ? "opacity-40" : ""
                   }`}
                 >
-                  <Image src={img.preview} alt={name || "Product image"} fill unoptimized className="object-cover" />
+                  <Image src={img.preview} alt={productData.name || "Product image"} fill unoptimized className="object-cover" />
                   {img.isPrimary && (
                     <span className="absolute left-1.5 top-1.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                       Primary
@@ -659,8 +687,9 @@ export default function ProductCreateForm({
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  name="price"
+                  value={productData.price}
+                  onChange={handleChange}
                   placeholder="0.00"
                   className={`${inputClass} pl-7 ${errors.price ? errorInputClass : ""}`}
                 />
@@ -687,8 +716,9 @@ export default function ProductCreateForm({
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  value={comparePrice}
-                  onChange={(e) => setComparePrice(e.target.value)}
+                  name="comparePrice"
+                  value={productData.comparePrice}
+                  onChange={handleChange}
                   placeholder="0.00"
                   className={`${inputClass} pl-7 ${errors.comparePrice ? errorInputClass : ""}`}
                 />
@@ -710,8 +740,9 @@ export default function ProductCreateForm({
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  value={costPrice}
-                  onChange={(e) => setCostPrice(e.target.value)}
+                  name="costPrice"
+                  value={productData.costPrice}
+                  onChange={handleChange}
                   placeholder="0.00"
                   className={`${inputClass} pl-7 ${errors.costPrice ? errorInputClass : ""}`}
                 />
@@ -730,14 +761,16 @@ export default function ProductCreateForm({
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  name="weight"
+                  value={productData.weight}
+                  onChange={handleChange}
                   placeholder="0.00"
                   className={`${inputClass} rounded-r-none ${errors.weight ? errorInputClass : ""}`}
                 />
                 <select
-                  value={weightUnit}
-                  onChange={(e) => setWeightUnit(e.target.value as "kg" | "g")}
+                  name="weightUnit"
+                  value={productData.weightUnit}
+                  onChange={handleChange}
                   className="rounded-r-lg border border-l-0 border-sidebar-border bg-sidebar-accent/50 px-3 text-sm text-sidebar-foreground outline-none focus:border-sidebar-ring"
                 >
                   <option value="kg">kg</option>
@@ -964,7 +997,7 @@ export default function ProductCreateForm({
                       price overrides inherit the base price.
                     </p>
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[680px]">
+                      <table className="w-full min-w-170">
                         <thead>
                           <tr className="border-b border-sidebar-border text-left">
                             <th className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">

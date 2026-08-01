@@ -1,3 +1,16 @@
+export type ProductData = {
+  name: string,
+  slug: string,
+  shortDescription: string,
+  description: string,
+  sku: string
+  price: string,
+  comparePrice: string,
+  costPrice: string,
+  weight: string,
+  weightUnit: "kg" | "g"
+}
+
 export type CategoryNode = {
   id: number
   name: string
