@@ -1,11 +1,16 @@
 "use client"
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/toast"
-import InputField from "@/components/shared/ui/InputField";
-import apiClient, { isAxiosError } from "@/lib/api-client";
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
 import { ValidationErrorResponse } from "@/types/api-error";
+import { Eye, EyeOff } from "lucide-react";
 
 type UserData = {
   firstName: string,
@@ -21,6 +26,7 @@ type ValidationError = Record<string, string>
 export default function Form() {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<ValidationError>({});
+    const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [data, setData] = useState<UserData>({
       firstName: '',
       lastName: '',
@@ -42,6 +48,7 @@ export default function Form() {
     const handleSubmit = async (e: React.SubmitEvent) => {
       e.preventDefault();
       try {
+        setIsButtonLoading(true)
         const userInfo = {
           firstName: data.firstName,
           lastName: data.lastName,
@@ -50,6 +57,7 @@ export default function Form() {
           confirmPassword: data.confirmPassword
         }
 
+        await ensureCsrfCookie()
         const response = await apiClient.post('/api/register', userInfo, {
           headers: {
             "Content-Type": "application/json",
@@ -66,6 +74,7 @@ export default function Form() {
             agreed: false
           })
           setErrors({})
+          setIsButtonLoading(false)
         }
       } catch (err) {
         if(err instanceof Error){
@@ -94,9 +103,18 @@ export default function Form() {
           }
 
         }
+        setIsButtonLoading(false)
       }
 
     };
+
+    // useEffect(() => {
+    //   const fnc = async () => {
+    //     await ensureCsrfCookie()
+    //   }
+
+    //   fnc();
+    // }, [])
 
     return (
         <>
@@ -121,80 +139,51 @@ export default function Form() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-5">
-              <InputField
-                id="firstName"
-                label="First name"
-                type="text"
-                name="firstName"
-                value={data.firstName}
-                onChange={handleOnChange}
-                required
-              />
-
-              <InputField
-                id="lastName"
-                label="Last name"
-                type="text"
-                name="lastName"
-                value={data.lastName}
-                onChange={handleOnChange}
-                required
-              />
+              <Field>
+                <FieldLabel htmlFor="firstName">First Name</FieldLabel>
+                <Input value={data.firstName} onChange={handleOnChange} aria-invalid={errors.firstName ? true : false} name="firstName" type="text" id="firstName" />
+                { errors.firstName && (<FieldError>{errors.firstName}</FieldError>) }
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="firstName">Last Name</FieldLabel>
+                <Input value={data.lastName} onChange={handleOnChange} aria-invalid={errors.lastName ? true : false} name="lastName" type="text" id="lastName" />
+                { errors.lastName && (<FieldError>{errors.lastName}</FieldError>) }
+              </Field>
             </div>
-
-            <InputField
-              id="email"
-              label="Email address"
-              type="email"
-              name="email"
-              value={data.email}
-              onChange={handleOnChange}
-              placeholder="you@example.com"
-              error={errors.email ?? null}
-              required
-            />
-
-            <div className="relative">
-              <InputField
-                id="password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={data.password}
-                onChange={handleOnChange}
-                placeholder="Create a password"
-                required
-                className="pr-12"
-                error={errors.password ?? null}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[38px] text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-
-            <InputField
-              id="confirmPassword"
-              label="Confirm password"
+            <Field>
+              <FieldLabel htmlFor="email">Email address</FieldLabel>
+              <Input value={data.email} onChange={handleOnChange} aria-invalid={errors.email ? true : false} name="email" type="email" id="email" placeholder="example@email.com" />
+              { errors.email && (<FieldError>{errors.email}</FieldError>) }
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <InputGroup>
+                <InputGroupInput 
+                  value={data.password} 
+                  onChange={handleOnChange} 
+                  aria-invalid={errors.password ? true : false} 
+                  name="password" 
+                  type={showPassword ? "text" : "password"}
+                  id="password" 
+                  placeholder="Create a password" 
+                />
+                <InputGroupAddon onClick={() => setShowPassword(!showPassword)} className="cursor-pointer" align="inline-end">
+                  { showPassword ? <EyeOff /> : <Eye /> }
+                </InputGroupAddon>
+              </InputGroup>
+              { errors.password && (<FieldError>{errors.password}</FieldError>) }
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="password">Confirm password</FieldLabel>
+              <Input 
+              value={data.confirmPassword} 
+              onChange={handleOnChange} 
+              name="confirmPassword" 
               type={showPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={data.confirmPassword}
-              onChange={handleOnChange}
-              placeholder="Re-enter your password"
-              required
-            />
+              id="password" 
+              placeholder="Re-enter your password" 
+              />
+            </Field>
 
             <label className="flex items-start gap-2 cursor-pointer">
               <input
@@ -213,12 +202,12 @@ export default function Form() {
               </span>
             </label>
 
-            <button
-              type="submit"
-              className="w-full cursor-pointer rounded-xl bg-slate-900 py-3 px-4 text-sm font-semibold text-white hover:bg-slate-800 active:bg-slate-950 transition-colors"
-            >
-              Create account
-            </button>
+            <Button type="submit" disabled={isButtonLoading} size="lg" className={`w-full cursor-pointer`}>
+              Create Account
+              {
+                isButtonLoading ? <Spinner data-icon="inline-start" /> : '' 
+              }
+            </Button>
           </form>
         </>
     )
