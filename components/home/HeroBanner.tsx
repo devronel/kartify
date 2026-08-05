@@ -1,5 +1,6 @@
 "use client"
 
+import apiClient from "@/lib/api-client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -44,7 +45,7 @@ export default function HeroBanner() {
   const slide = slides[current];
 
   return (
-    <section className={`relative bg-gradient-to-r ${slide.bg} transition-colors duration-700`}>
+    <section className={`relative bg-linear-to-r ${slide.bg} transition-colors duration-700`}>
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-[10%] w-80 h-80 bg-white rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-[10%] w-96 h-96 bg-white rounded-full blur-3xl" />

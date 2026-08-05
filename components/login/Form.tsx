@@ -11,6 +11,8 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Eye, EyeOff } from "lucide-react";
 import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
+import { useAuth } from "@/context/AuthContext";
+import { ValidationErrorResponse } from "@/types/api-error";
 
 type UserCredential = {
   email: string,
@@ -23,6 +25,7 @@ export default function Form() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { authenticate } = useAuth();
   const [data, setData] = useState<UserCredential>({
     email: '',
     password: ''
@@ -48,14 +51,9 @@ export default function Form() {
       try {
         setIsButtonLoading(true)
 
-        await ensureCsrfCookie()
-        const response = await apiClient.post('/api/authenticate', data, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
+        const response = await authenticate(data.email, data.password);
 
-        if(response.data.success){
+        if(response.success){
           setData({
             email: '',
             password: '',
@@ -67,7 +65,6 @@ export default function Form() {
         }
       } catch (err) {
         if(err instanceof Error){
-          
           if(!isAxiosError(err)){
             toast.add({
               type: "error",
@@ -77,9 +74,21 @@ export default function Form() {
             return
           }
   
-          setErrors({
-            email: "Invalid credentials"
-          })
+          switch (err.status) {
+            case 422:
+            case 500:
+              setErrors({
+                email: "Invalid credentials"
+              })
+              break;
+            default:
+              toast.add({
+                type: "error",
+                description: "Something's wrong, Please try again.",
+                priority: "high",
+              })
+              break;
+          }
 
         }
         setIsButtonLoading(false)

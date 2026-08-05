@@ -4,9 +4,12 @@ import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell, Search, ChevronDown, LogOut, User, Settings, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { getInitials } from "@/lib/helper";
 
 export default function NavBar() {
   const [profileOpen, setProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="flex h-16 items-center gap-4 border-b border-sidebar-border bg-sidebar px-4 lg:px-6">
@@ -42,11 +45,11 @@ export default function NavBar() {
           className="flex items-center gap-2 rounded-lg p-1.5 text-sidebar-foreground hover:bg-sidebar-accent transition-colors outline-none"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-            JD
+            { getInitials(user?.fullName) }
           </div>
           <div className="hidden lg:block text-left text-sm">
-            <p className="font-medium text-sidebar-foreground leading-tight">John Doe</p>
-            <p className="text-xs text-sidebar-foreground/50 leading-tight">Admin</p>
+            <p className="font-medium text-sidebar-foreground leading-tight">{user?.fullName}</p>
+            <p className="text-xs text-sidebar-foreground/50 leading-tight">{user?.role}</p>
           </div>
           <ChevronDown className="hidden lg:block w-4 h-4 text-sidebar-foreground/40" />
         </button>
@@ -74,7 +77,7 @@ export default function NavBar() {
                 Back to Store
               </Link>
               <div className="my-1 border-t border-sidebar-border" />
-              <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">
+              <button onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors">
                 <LogOut className="w-4 h-4" />
                 Logout
               </button>

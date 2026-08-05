@@ -35,14 +35,13 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!response.ok) {
-      // genuine server error, not an auth issue
       return NextResponse.redirect(new URL('/error?type=auth_down', request.url));
     }
 
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
     if (isAdminRoute) {
       const user = await response.json();
-      if (user.role !== 'ADMIN') {
+      if (user.payload.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/', request.url)); // or a 403 page
       }
     }

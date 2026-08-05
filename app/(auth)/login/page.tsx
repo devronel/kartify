@@ -56,7 +56,7 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Sign in to your account</h1>
           <p className="text-slate-500 mb-8">
             New to Kartify?{" "}
-            <Link href="#" className="text-slate-900 font-semibold hover:underline">
+            <Link href="/register" className="text-slate-900 font-semibold hover:underline">
               Create an account
             </Link>
           </p>

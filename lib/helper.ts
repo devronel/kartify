@@ -36,3 +36,15 @@ export const buildProductVariantCombos = (selectedAttrs: Attribute[], selectedVa
     }
   })
 }
+
+// --- Get the first letter of first name and last name ---
+export const getInitials = (fullName?: string): string => {
+  if (!fullName) return "";
+
+  const parts = fullName.trim().split(" ").filter(Boolean);
+
+  const first = parts[0]?.[0] ?? "A";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "B";
+
+  return (first + last).toUpperCase();
+};

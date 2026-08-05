@@ -11,29 +11,30 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
 import { ValidationErrorResponse } from "@/types/api-error";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type UserData = {
   firstName: string,
   lastName: string,
   email: string,
   password: string,
-  confirmPassword: string,
-  agreed: boolean
+  confirmPassword: string
 }
 
 type ValidationError = Record<string, string>
 
 export default function Form() {
+    const { register } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<ValidationError>({});
+    const [agreed, setAgreed] = useState<boolean>(false)
     const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [data, setData] = useState<UserData>({
       firstName: '',
       lastName: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      agreed: false
+      confirmPassword: ''
     })
 
     const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +49,9 @@ export default function Form() {
     const handleSubmit = async (e: React.SubmitEvent) => {
       e.preventDefault();
       try {
+        
         setIsButtonLoading(true)
+        
         const userInfo = {
           firstName: data.firstName,
           lastName: data.lastName,
@@ -57,21 +60,15 @@ export default function Form() {
           confirmPassword: data.confirmPassword
         }
 
-        await ensureCsrfCookie()
-        const response = await apiClient.post('/api/register', userInfo, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
+        const response = await register(userInfo)
 
-        if(response.data.success){
+        if(response.success){
           setData({
             firstName: '',
             lastName: '',
             email: '',
             password: '',
-            confirmPassword: '',
-            agreed: false
+            confirmPassword: ''
           })
           setErrors({})
           setIsButtonLoading(false)
@@ -87,7 +84,7 @@ export default function Form() {
             })
             return
           }
-  
+
           switch (err.status) {
             case 422:
               const data = err.response?.data as ValidationErrorResponse;
@@ -189,8 +186,8 @@ export default function Form() {
               <input
                 type="checkbox"
                 name="agreed"
-                checked={data.agreed}
-                onChange={handleOnChange}
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
                 required
                 className="mt-0.5 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/20"
               />
