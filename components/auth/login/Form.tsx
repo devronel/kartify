@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Eye, EyeOff } from "lucide-react";
-import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
+import { isAxiosError } from "@/lib/api-client";
 import { useAuth } from "@/context/AuthContext";
-import { ValidationErrorResponse } from "@/types/api-error";
 
 type UserCredential = {
   email: string,
@@ -46,7 +45,7 @@ export default function Form() {
 
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
       e.preventDefault();
       try {
         setIsButtonLoading(true)
@@ -151,7 +150,7 @@ export default function Form() {
               />
               <span className="text-sm text-slate-600">Remember me</span>
             </label>
-            <Link href="#" className="text-sm font-medium text-slate-900 hover:underline">
+            <Link href="/forgot-password" className="text-sm font-medium text-slate-900 hover:underline">
               Forgot password?
             </Link>
           </div>

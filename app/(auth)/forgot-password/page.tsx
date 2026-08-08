@@ -1,12 +1,11 @@
-import Form from "@/components/auth/login/Form";
-import Link from "next/link";
+import Form from "@/components/auth/forgot-password/Form";
 
-export const metadata = { 
-  title: "Sign In",
-  description: "Log in to access your account"
+export const metadata = {
+  title: "Forgot Password",
+  description: "Reset your Kartify account password"
 };
 
-export default function Login() {
+export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden items-center justify-center">
@@ -22,10 +21,10 @@ export default function Login() {
             <span className="text-3xl font-bold text-white tracking-tight">Kartify</span>
           </div>
           <h2 className="text-4xl font-bold text-white mb-4">
-            Welcome back
+            Reset your password
           </h2>
           <p className="text-slate-400 text-lg max-w-md mx-auto leading-relaxed">
-            Sign in to access your orders, track shipments, and discover exclusive deals.
+            We&apos;ll send you a secure link to get back into your account in no time.
           </p>
           <div className="mt-12 grid grid-cols-3 gap-6 max-w-sm mx-auto">
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
@@ -53,16 +52,13 @@ export default function Login() {
             <span className="text-2xl font-bold text-slate-900 tracking-tight">Kartify</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Sign in to your account</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Forgot your password?</h1>
           <p className="text-slate-500 mb-8">
-            New to Kartify?{" "}
-            <Link href="/register" className="text-slate-900 font-semibold hover:underline">
-              Create an account
-            </Link>
+            Enter your email and we&apos;ll send you a link to reset your password.
           </p>
 
           <Form />
-          
+
         </div>
       </div>
     </div>

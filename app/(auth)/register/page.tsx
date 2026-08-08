@@ -1,4 +1,4 @@
-import Form from "@/components/register/Form";
+import Form from "@/components/auth/register/Form";
 import Link from "next/link";
 
 export const metadata = {

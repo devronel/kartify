@@ -1,14 +1,14 @@
 "use client"
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "@/components/ui/toast"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
+import { isAxiosError } from "@/lib/api-client";
 import { ValidationErrorResponse } from "@/types/api-error";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";

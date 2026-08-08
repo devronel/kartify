@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ChevronDown, LogOut, User } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { getInitials } from "@/lib/helper";
 
 export default function NavBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
@@ -69,15 +74,59 @@ export default function NavBar() {
               </span>
             </Link>
 
-            <Link
-              href="/login"
-              className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-              <span className="hidden lg:inline">Account</span>
-            </Link>
+            {user ? (
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors outline-none"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                    {getInitials(user.fullName)}
+                  </div>
+                  <span className="hidden lg:block text-sm font-medium max-w-24 truncate">{user.fullName}</span>
+                  <ChevronDown className="hidden lg:block w-4 h-4 text-slate-400" />
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                      <div className="px-3 py-2">
+                        <p className="text-sm font-medium text-slate-900 truncate">{user.fullName}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      </div>
+                      <div className="my-1 border-t border-slate-100" />
+                      <Link
+                        href="/profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                      >
+                        <User className="w-4 h-4" />
+                        Profile
+                      </Link>
+                      <div className="my-1 border-t border-slate-100" />
+                      <button
+                        onClick={logout}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                <span className="hidden lg:inline">Account</span>
+              </Link>
+            )}
 
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -112,7 +161,7 @@ export default function NavBar() {
               { label: "Deals", href: "/deals" },
               { label: "New Arrivals", href: "/new-arrivals" },
               { label: "Categories", href: "/categories" },
-              { label: "Account", href: "/login" },
+              { label: "Account", href: user ? "/profile" : "/login" },
             ].map((item) => (
               <Link
                 key={item.label}

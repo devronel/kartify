@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function logout() {
         try {
             const response = await apiClient.post("/api/logout");
-            console.log(response)
+            setUser(null)
             router.push("/");
             router.refresh();
         } catch (error) {
