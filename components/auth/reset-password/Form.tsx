@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Eye, EyeOff, KeyRound } from "lucide-react";
+import apiClient, { isAxiosError } from "@/lib/api-client";
+import { toast } from "@/components/ui/toast";
+import { ValidationErrorResponse } from "@/types/api-error";
 
 interface ResetPassword {
   email: string,
@@ -35,10 +38,59 @@ export default function Form(props: ResetPassword) {
     });
   }
 
-  const handleSubmit = (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
-    
+    try {
+      
+      const data = {
+        email: props.email,
+        token: props.token,
+        password: password,
+        confirmPassword: confirmPassword
+      }
+
+      setIsButtonLoading(true);
+
+      const response = await apiClient.post('/api/reset-password', data, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+
+      if(response.data.success){
+        setIsButtonLoading(false);
+        setSubmitted(true);
+      }
+
+    } catch (err) {
+      if(err instanceof Error){
+        if(!isAxiosError(err)){
+          toast.add({
+            type: "error",
+            description: "Something's wrong, Please try again.",
+            priority: "high",
+          })
+          return
+        }
+
+        switch (err.status) {
+          case 422:
+            const data = err.response?.data as ValidationErrorResponse;
+            setErrors(data.errors)
+            break;
+          default:
+            toast.add({
+              type: "error",
+              description: "Something's wrong, Please try again.",
+              priority: "high",
+            })
+            break;
+        }
+
+      }
+      setIsButtonLoading(false);
+    }
     
 
     // setIsButtonLoading(true);
