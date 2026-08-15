@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_ROUTES = ['/profile', '/admin'];
+const PROTECTED_ROUTES = ['/admin', '/profile'];
 const ADMIN_ROUTES = ['/admin'];
 
 export async function proxy(request: NextRequest) {
