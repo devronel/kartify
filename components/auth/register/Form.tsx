@@ -105,14 +105,6 @@ export default function Form() {
 
     };
 
-    // useEffect(() => {
-    //   const fnc = async () => {
-    //     await ensureCsrfCookie()
-    //   }
-
-    //   fnc();
-    // }, [])
-
     return (
         <>
           <button className="w-full flex items-center justify-center gap-3 border border-slate-300 rounded-xl py-3 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">

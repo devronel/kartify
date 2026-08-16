@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,27 +12,11 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarSeparator,
+  SidebarMenuItem
 } from "@/components/ui/sidebar";
 import {
-  LayoutDashboard,
-  Package,
-  Users,
-  BarChart3,
   Settings,
   LogOut,
-  CircleDollarSign,
-  Tags,
-  Truck,
-  ChevronRight,
-  Boxes,
-  SquarePlus,
-  FolderTree,
-  PackageCheck,
   BookUser,
   MapPin,
   UserLock
@@ -45,18 +28,8 @@ const mainItems = [
   { label: "Account", href: "/profile/account", icon: UserLock },
 ];
 
-const managementItems = [
-  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { label: "Sales", href: "/admin/sales", icon: CircleDollarSign },
-  { label: "Discounts", href: "/admin/discounts", icon: Tags },
-  { label: "Shipping", href: "/admin/shipping", icon: Truck },
-];
-
 export function ProfileSidebar() {
   const pathname = usePathname();
-  const [productsOpen, setProductsOpen] = useState(
-    pathname.startsWith("/admin/products")
-  );
 
   return (
     <Sidebar collapsible="icon">

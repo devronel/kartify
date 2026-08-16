@@ -13,6 +13,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
 
+export const metadata = {
+  title: "Kartify - Address"
+};
+
 export default function AddressPage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
