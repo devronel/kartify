@@ -81,7 +81,9 @@ export default function NavBar() {
                   className="flex items-center gap-2 rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors outline-none"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                    {getInitials(user.fullName)}
+                    {
+                      user.profilePictureUrl ? <img src={user.profilePictureUrl} alt="" className=" aspect-square rounded-full" /> : getInitials(user.fullName)
+                    }
                   </div>
                   <span className="hidden lg:block text-sm font-medium max-w-24 truncate">{user.fullName}</span>
                   <ChevronDown className="hidden lg:block w-4 h-4 text-slate-400" />

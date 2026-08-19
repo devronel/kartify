@@ -28,7 +28,9 @@ export default function ProfileNavBar() {
           className="flex items-center gap-2 rounded-lg p-1.5 text-sidebar-foreground hover:bg-sidebar-accent transition-colors outline-none"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-            { getInitials(user?.fullName) }
+            {
+              user?.profilePictureUrl ? <img src={user.profilePictureUrl} alt="" className=" aspect-square rounded-full" /> : getInitials(user?.fullName)
+            }
           </div>
           <div className="hidden lg:block text-left text-sm">
             <p className="font-medium text-sidebar-foreground leading-tight">{user?.fullName}</p>

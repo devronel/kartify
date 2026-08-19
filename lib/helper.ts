@@ -1,4 +1,5 @@
 import { Attribute, VariantCombo } from "@/types/admin/product";
+import { PixelCrop } from "react-image-crop";
 
 export const slugify = (value: string) =>
   value
@@ -48,3 +49,63 @@ export const getInitials = (fullName?: string): string => {
 
   return (first + last).toUpperCase();
 };
+
+// --- Get Crop File ---
+export const getCroppedFile = ( image: HTMLImageElement, crop: PixelCrop, fileName: string): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+
+    if (!ctx) {
+      reject(new Error("No 2d context"))
+      return
+    }
+
+    const scaleX = image.naturalWidth / image.width
+    const scaleY = image.naturalHeight / image.height
+
+    canvas.width = Math.round(crop.width * scaleX)
+    canvas.height = Math.round(crop.height * scaleY)
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    )
+
+    // 1. Extract the raw blob data stream
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Canvas is empty"))
+          return
+        }
+
+        // 2. Wrap the Blob directly into a standard native File object
+        const finalFile = new File([blob], fileName, {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        })
+
+        resolve(finalFile)
+      },
+      "image/jpeg",
+      0.9 // Image quality compression profile ratio
+    )
+  })
+}
+
+
+// --- Generate filename ---
+export const generateUniqueFileName = (prefix: string) => {
+  const timestamp = Date.now();
+  const secureRandom = crypto.randomUUID().split('-')[0];
+  
+  return `${prefix}-${timestamp}-${secureRandom}.jpg`;
+}

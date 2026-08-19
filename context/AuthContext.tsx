@@ -1,14 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, SetStateAction, Dispatch } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import apiClient, { ensureCsrfCookie } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
-  fullName: string,
+  fullName: string;
   email: string;
+  profilePictureUrl: string;
   role: "CUSTOMER" | "ADMIN";
 }
 
