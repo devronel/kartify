@@ -216,14 +216,6 @@
         "cityClass": "HUC"
     },
     {
-        "psgcCode": "1430300000",
-        "regCode": "14",
-        "provCode": "303",
-        "provName": "City of Baguio",
-        "provOldName": "",
-        "cityClass": "HUC"
-    },
-    {
         "psgcCode": "1630400000",
         "regCode": "16",
         "provCode": "304",
@@ -236,14 +228,6 @@
         "regCode": "10",
         "provCode": "305",
         "provName": "City of Cagayan De Oro ",
-        "provOldName": "",
-        "cityClass": "HUC"
-    },
-    {
-        "psgcCode": "0730600000",
-        "regCode": "07",
-        "provCode": "306",
-        "provName": "City of Cebu ",
         "provOldName": "",
         "cityClass": "HUC"
     },
@@ -280,26 +264,10 @@
         "cityClass": "HUC"
     },
     {
-        "psgcCode": "0731100000",
-        "regCode": "07",
-        "provCode": "311",
-        "provName": "City of Lapu-Lapu",
-        "provOldName": "Opon",
-        "cityClass": "HUC"
-    },
-    {
         "psgcCode": "0431200000",
         "regCode": "04",
         "provCode": "312",
         "provName": "City of Lucena ",
-        "provOldName": "",
-        "cityClass": "HUC"
-    },
-    {
-        "psgcCode": "0731300000",
-        "regCode": "07",
-        "provCode": "313",
-        "provName": "City of Mandaue",
         "provOldName": "",
         "cityClass": "HUC"
     },

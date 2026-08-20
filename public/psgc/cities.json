@@ -2794,7 +2794,7 @@
     {
         "psgcCode": "30300",
         "regCode": "14",
-        "provCode": "303",
+        "provCode": "011",
         "munCityCode": "30300",
         "munCityName": "City of Baguio",
         "munCityOldName": ""
@@ -3034,7 +3034,7 @@
     {
         "psgcCode": "30600",
         "regCode": "07",
-        "provCode": "306",
+        "provCode": "022",
         "munCityCode": "30600",
         "munCityName": "City of Cebu ",
         "munCityOldName": ""
@@ -3266,7 +3266,7 @@
     {
         "psgcCode": "31100",
         "regCode": "07",
-        "provCode": "311",
+        "provCode": "022",
         "munCityCode": "31100",
         "munCityName": "City of Lapu-Lapu",
         "munCityOldName": "Opon"
@@ -3362,7 +3362,7 @@
     {
         "psgcCode": "31300",
         "regCode": "07",
-        "provCode": "313",
+        "provCode": "022",
         "munCityCode": "31300",
         "munCityName": "City of Mandaue",
         "munCityOldName": ""

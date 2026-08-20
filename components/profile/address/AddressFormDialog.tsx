@@ -7,26 +7,34 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
 import apiPsgcClient from "@/lib/api-psgc"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { Barangay, Municipality, Province, Region } from "@/types/address"
 
 export function AddressFormDialog() {
   
-  const [regions, setRegions] = useState([])
-  const [provinces, setProvinces] = useState([])
-  const [cities, setCities] = useState([])
-  const [barangays, setBarangays] = useState([])
-  const [regionCode, setRegionCode] = useState<string>("");
-  const [provinceCode, setProvinceCode] = useState<string>("");
-  const [cityCode, setCityCode] = useState<string>("");
+  const [regions, setRegions] = useState<Region[]>([])
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [cities, setCities] = useState<Municipality[]>([])
+  const [barangays, setBarangays] = useState<Barangay[]>([])
+  const [regionCode, setRegionCode] = useState<string>("")
+  const [provinceCode, setProvinceCode] = useState<string>("")
+  const [cityCode, setCityCode] = useState<string>("")
   const [barangayCode, setBarangayCode] = useState<string>("")
 
   // --- Get Province base on region code ---
   const getProvince = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     try {
+
       const code = event.target.value
       setRegionCode(code)
-      const response = await apiPsgcClient('/psgc/provinces.json')
+      setProvinces([])
+      setProvinceCode("")
+      setCities([])
+      setCityCode("")
+      setBarangays([])
+      setBarangayCode("")
 
+      const response = await apiPsgcClient('/psgc/provinces.json')
       if(response.status === 200){
         const filteredProvinces = response.data.filter((province: { regCode: string }) => province.regCode === code);
         setProvinces(filteredProvinces)
@@ -41,6 +49,11 @@ export function AddressFormDialog() {
     try {
       const code = event.target.value
       setProvinceCode(code)
+      setCities([])
+      setCityCode("")
+      setBarangays([])
+      setBarangayCode("")
+
       const response = await apiPsgcClient('/psgc/cities.json')
       if(response.status === 200){
         const filteredCities = response.data.filter((city: { provCode: string }) => city.provCode === code);
@@ -56,6 +69,9 @@ export function AddressFormDialog() {
     try {
       const code = event.target.value
       setCityCode(code)
+      setBarangays([])
+      setBarangayCode("")
+
       const response = await apiPsgcClient('/psgc/barangays.json')
       if(response.status === 200){
         const filteredBarangays = response.data.filter((barangay: { munCityCode: string }) => barangay.munCityCode === code);
@@ -77,11 +93,13 @@ export function AddressFormDialog() {
     }
   }
 
+  const regionMap = useMemo(() => Object.fromEntries(regions.map(region => [region.regCode, region.regionName])), [regions]);
+  const provinceMap = useMemo(() => Object.fromEntries(provinces.map(province => [province.provCode, province.provName])), [provinces]);
+  const cityMap = useMemo(() => Object.fromEntries(cities.map(city => [city.munCityCode, city.munCityName])), [cities]);
+  const barangayMap = useMemo(() => Object.fromEntries(barangays.map(barangay => [barangay.brgyCode, barangay.brgyName])), [barangays]);
+
   const save = () => {
-    console.log(regionCode)
-    console.log(provinceCode)
-    console.log(cityCode)
-    console.log(barangayCode)
+    console.log(`${regionMap[regionCode]} --> ${provinceMap[provinceCode]} --> ${cityMap[cityCode]} --> ${barangayMap[barangayCode]}`)
   }
 
   useEffect(() => {
@@ -163,6 +181,7 @@ export function AddressFormDialog() {
             />
           </Field>
 
+          {/* --- Region Select --- */}
           <Field>
             <FieldLabel htmlFor="addressLine2">Region</FieldLabel>
             <select
@@ -183,6 +202,7 @@ export function AddressFormDialog() {
               </select>
           </Field>
 
+          {/* --- Province Select ---  */}
           <Field>
             <FieldLabel htmlFor="addressLine2">Province</FieldLabel>
             <select
@@ -203,6 +223,7 @@ export function AddressFormDialog() {
               </select>
           </Field>
 
+          {/* --- City/Municipality Select --- */}
           <Field>
             <FieldLabel htmlFor="addressLine2">City/Municipality</FieldLabel>
             <select
@@ -223,6 +244,7 @@ export function AddressFormDialog() {
               </select>
           </Field>
 
+          {/* --- Barangay Select --- */}
           <Field>
             <FieldLabel htmlFor="addressLine2">Barangay</FieldLabel>
             <select
