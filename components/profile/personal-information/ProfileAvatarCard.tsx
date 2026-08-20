@@ -164,7 +164,7 @@ const ProfilePictureModal = ({ image, removeImage }: ImageType) => {
 
   return (
     <Dialog open={true}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent showCloseButton={false} className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
           <DialogDescription>
@@ -190,7 +190,7 @@ const ProfilePictureModal = ({ image, removeImage }: ImageType) => {
           <img ref={imgRef} alt="Crop me" src={image} onLoad={onImageLoad} />
         </ReactCrop>
         <DialogFooter>
-          <DialogClose render={<Button onClick={removeImage} variant="outline">Cancel</Button>} />
+          <Button onClick={removeImage} disabled={isButtonLoading} variant="outline">Cancel</Button>
           <Button onClick={save} disabled={isButtonLoading} className={`cursor-pointer`}>
             Save changes
             {

@@ -1,29 +1,93 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-} from "@/components/ui/field"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
+import apiPsgcClient from "@/lib/api-psgc"
+import { useEffect, useState } from "react"
 
 export function AddressFormDialog() {
+  
+  const [regions, setRegions] = useState([])
+  const [provinces, setProvinces] = useState([])
+  const [cities, setCities] = useState([])
+  const [barangays, setBarangays] = useState([])
+  const [regionCode, setRegionCode] = useState<string>("");
+  const [provinceCode, setProvinceCode] = useState<string>("");
+  const [cityCode, setCityCode] = useState<string>("");
+  const [barangayCode, setBarangayCode] = useState<string>("")
+
+  // --- Get Province base on region code ---
+  const getProvince = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    try {
+      const code = event.target.value
+      setRegionCode(code)
+      const response = await apiPsgcClient('/psgc/provinces.json')
+
+      if(response.status === 200){
+        const filteredProvinces = response.data.filter((province: { regCode: string }) => province.regCode === code);
+        setProvinces(filteredProvinces)
+      }
+    } catch (error: any) {
+      console.log(error.message)
+    }
+  }
+
+  // -- Get Cities base on province code ---
+  const getCity = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    try {
+      const code = event.target.value
+      setProvinceCode(code)
+      const response = await apiPsgcClient('/psgc/cities.json')
+      if(response.status === 200){
+        const filteredCities = response.data.filter((city: { provCode: string }) => city.provCode === code);
+        setCities(filteredCities)
+      }
+    } catch (error: any) {
+      console.log(error.message)
+    }
+  }
+
+  // --- Get barangay base on city/municipality code ---
+  const getBarangay = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    try {
+      const code = event.target.value
+      setCityCode(code)
+      const response = await apiPsgcClient('/psgc/barangays.json')
+      if(response.status === 200){
+        const filteredBarangays = response.data.filter((barangay: { munCityCode: string }) => barangay.munCityCode === code);
+        setBarangays(filteredBarangays)
+      }
+    } catch (error: any) {
+      console.log(error.message)
+    }
+  }
+
+  // -- Get All Region ---
+  const getRegion = async () => {
+    try {
+      const response = await apiPsgcClient('/psgc/regions.json')
+      console.log(response)
+      setRegions(response.data)
+    } catch (error: any) {
+      console.log(error.message)
+    }
+  }
+
+  const save = () => {
+    console.log(regionCode)
+    console.log(provinceCode)
+    console.log(cityCode)
+    console.log(barangayCode)
+  }
+
+  useEffect(() => {
+    getRegion();
+  }, [])
+
   return (
     <Dialog>
       <DialogTrigger render={<Button><Plus /> Add New Address</Button>} />
@@ -100,28 +164,83 @@ export function AddressFormDialog() {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="barangay">Barangay</FieldLabel>
-            <Input id="barangay" name="barangay" type="text" defaultValue="San Jose" />
+            <FieldLabel htmlFor="addressLine2">Region</FieldLabel>
+            <select
+                value={regionCode}
+                onChange={getProvince}
+                className="w-45 rounded-md border px-3 py-2"
+              >
+                <option value="">Select region</option>
+
+                {regions.map((region) => (
+                  <option
+                    key={region.regCode}
+                    value={region.regCode}
+                  >
+                    {region.regionName}
+                  </option>
+                ))}
+              </select>
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="city">City</FieldLabel>
-            <Input id="city" name="city" type="text" defaultValue="Calamba City" />
+            <FieldLabel htmlFor="addressLine2">Province</FieldLabel>
+            <select
+                value={provinceCode}
+                onChange={getCity}
+                className="w-45 rounded-md border px-3 py-2"
+              >
+                <option value="">Select Province</option>
+
+                {provinces.map((province) => (
+                  <option
+                    key={province.provCode}
+                    value={province.provCode}
+                  >
+                    {province.provName}
+                  </option>
+                ))}
+              </select>
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="province">Province</FieldLabel>
-            <Input id="province" name="province" type="text" defaultValue="Laguna" />
+            <FieldLabel htmlFor="addressLine2">City/Municipality</FieldLabel>
+            <select
+                value={cityCode}
+                onChange={getBarangay}
+                className="w-45 rounded-md border px-3 py-2"
+              >
+                <option value="">Select City/Municipality</option>
+
+                {cities.map((city) => (
+                  <option
+                      key={city.munCityCode}
+                      value={city.munCityCode}
+                    >
+                    {city.munCityName}
+                  </option>
+                ))}
+              </select>
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="region">Region</FieldLabel>
-            <Input
-              id="region"
-              name="region"
-              type="text"
-              defaultValue="Region IV-A (CALABARZON)"
-            />
+            <FieldLabel htmlFor="addressLine2">Barangay</FieldLabel>
+            <select
+                value={barangayCode}
+                onChange={(e) => setBarangayCode(e.target.value)}
+                className="w-45 rounded-md border px-3 py-2"
+              >
+                <option value="">Select Barangay</option>
+
+                {barangays.map((barangay) => (
+                  <option
+                      key={barangay.brgyCode}
+                      value={barangay.brgyCode}
+                    >
+                    {barangay.brgyName}
+                  </option>
+                ))}
+              </select>
           </Field>
 
           <Field>
@@ -144,7 +263,7 @@ export function AddressFormDialog() {
           <Button type="button" variant="outline">
             Cancel
           </Button>
-          <Button type="button">Save Address</Button>
+          <Button onClick={save} type="button">Save Address</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
