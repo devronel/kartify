@@ -3,12 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
 import apiPsgcClient from "@/lib/api-psgc"
 import { useEffect, useMemo, useState } from "react"
-import { Barangay, Municipality, Province, Region } from "@/types/address"
+import { AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
+import { toast } from "@/components/ui/toast"
+import apiClient from "@/lib/api-client"
+import { Spinner } from "@/components/ui/spinner"
 
 export function AddressFormDialog() {
   
@@ -20,6 +23,28 @@ export function AddressFormDialog() {
   const [provinceCode, setProvinceCode] = useState<string>("")
   const [cityCode, setCityCode] = useState<string>("")
   const [barangayCode, setBarangayCode] = useState<string>("")
+  const [addressInformation, setAddressInformation] = useState<AddressInformation>({
+    label: '',
+    type: "SHIPPING",
+    recipientName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    postalCode: '',
+    country: 'PH',
+    isDefault: false
+  })
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // --- Get value using onchange event ---
+  const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target
+    setAddressInformation(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
 
   // --- Get Province base on region code ---
   const getProvince = async (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -40,7 +65,11 @@ export function AddressFormDialog() {
         setProvinces(filteredProvinces)
       }
     } catch (error: any) {
-      console.log(error.message)
+      toast.add({
+        type: "error",
+        description: "Something's wrong, Please try again.",
+        priority: "high",
+      })
     }
   }
 
@@ -60,7 +89,11 @@ export function AddressFormDialog() {
         setCities(filteredCities)
       }
     } catch (error: any) {
-      console.log(error.message)
+      toast.add({
+        type: "error",
+        description: "Something's wrong, Please try again.",
+        priority: "high",
+      })
     }
   }
 
@@ -78,7 +111,11 @@ export function AddressFormDialog() {
         setBarangays(filteredBarangays)
       }
     } catch (error: any) {
-      console.log(error.message)
+      toast.add({
+        type: "error",
+        description: "Something's wrong, Please try again.",
+        priority: "high",
+      })
     }
   }
 
@@ -86,10 +123,13 @@ export function AddressFormDialog() {
   const getRegion = async () => {
     try {
       const response = await apiPsgcClient('/psgc/regions.json')
-      console.log(response)
       setRegions(response.data)
     } catch (error: any) {
-      console.log(error.message)
+      toast.add({
+        type: "error",
+        description: "Something's wrong, Please try again.",
+        priority: "high",
+      })
     }
   }
 
@@ -98,8 +138,42 @@ export function AddressFormDialog() {
   const cityMap = useMemo(() => Object.fromEntries(cities.map(city => [city.munCityCode, city.munCityName])), [cities]);
   const barangayMap = useMemo(() => Object.fromEntries(barangays.map(barangay => [barangay.brgyCode, barangay.brgyName])), [barangays]);
 
-  const save = () => {
-    console.log(`${regionMap[regionCode]} --> ${provinceMap[provinceCode]} --> ${cityMap[cityCode]} --> ${barangayMap[barangayCode]}`)
+  const save = async () => {
+    try {
+      
+      const address = {
+        ...addressInformation,
+        addressLine2: addressInformation.addressLine2 === '' ? null : addressInformation.addressLine2,
+        region: regionMap[regionCode],
+        province: provinceMap[provinceCode],
+        city: cityMap[cityCode],
+        barangay: barangayMap[barangayCode]
+      }
+
+      setIsButtonLoading(true)
+      const response = await apiClient.post('/api/account/address', address, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if(response.data.success){
+        setIsButtonLoading(false)
+      }
+      
+    } catch (error: any) {
+      setIsButtonLoading(false)
+      switch (error.status) {
+        case 422:
+          console.log(error.response.data.errors)
+          setErrors(error.response.data.errors)
+          break;
+      
+        default:
+          console.log(error.response)
+          break;
+      }
+    }
   }
 
   useEffect(() => {
@@ -123,25 +197,25 @@ export function AddressFormDialog() {
             <FieldLabel htmlFor="addressLabel">Label</FieldLabel>
             <Input
               id="addressLabel"
-              name="addressLabel"
+              name="label"
               type="text"
-              defaultValue="Home"
+              placeholder="Home, Office and etc."
+              aria-invalid={errors.label ? true : false}
+              value={addressInformation.label}
+              onChange={handleOnChange}
             />
-            <FieldDescription>
-              A nickname to help you recognize this address later
-            </FieldDescription>
+            { errors.label && (<FieldError>{errors.label}</FieldError>) }
           </Field>
 
           <Field>
             <FieldLabel htmlFor="addressType">Type</FieldLabel>
-            <Select name="addressType" defaultValue="shipping">
+            <Select name="type" onValueChange={value => setAddressInformation(prev => ({ ...prev, type: value }))} value={addressInformation.type}>
               <SelectTrigger id="addressType" className="w-full">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="shipping">Shipping</SelectItem>
-                <SelectItem value="billing">Billing</SelectItem>
-                <SelectItem value="both">Both</SelectItem>
+                <SelectItem value="SHIPPING">Shipping</SelectItem>
+                <SelectItem value="BILLING">Billing</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -152,13 +226,24 @@ export function AddressFormDialog() {
               id="recipientName"
               name="recipientName"
               type="text"
-              defaultValue="Juan Dela Cruz"
+              aria-invalid={errors.recipientName ? true : false}
+              value={addressInformation.recipientName}
+              onChange={handleOnChange}
             />
+            { errors.recipientName && (<FieldError>{errors.recipientName}</FieldError>) }
           </Field>
 
           <Field>
             <FieldLabel htmlFor="phone">Phone</FieldLabel>
-            <Input id="phone" name="phone" type="tel" defaultValue="09171234567" />
+            <Input 
+              id="phone" 
+              name="phone" 
+              type="tel" 
+              aria-invalid={errors.phone ? true : false}
+              value={addressInformation.phone}
+              onChange={handleOnChange}
+            />
+            { errors.phone && (<FieldError>{errors.phone}</FieldError>) }
           </Field>
 
           <Field className="sm:col-span-2">
@@ -167,27 +252,32 @@ export function AddressFormDialog() {
               id="addressLine1"
               name="addressLine1"
               type="text"
-              defaultValue="123 Rizal Street"
+              aria-invalid={errors.addressLine1 ? true : false}
+              value={addressInformation.addressLine1}
+              onChange={handleOnChange}
             />
+            { errors.addressLine1 && (<FieldError>{errors.addressLine1}</FieldError>) }
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="addressLine2">Address Line 2</FieldLabel>
+            <FieldLabel htmlFor="addressLine2">Address Line 2 (optional)</FieldLabel>
             <Input
               id="addressLine2"
               name="addressLine2"
               type="text"
-              defaultValue="Unit 4B"
+              value={addressInformation.addressLine2}
+              onChange={handleOnChange}
             />
           </Field>
 
           {/* --- Region Select --- */}
           <Field>
-            <FieldLabel htmlFor="addressLine2">Region</FieldLabel>
+            <FieldLabel htmlFor="region">Region</FieldLabel>
             <select
+                id="region"
                 value={regionCode}
                 onChange={getProvince}
-                className="w-45 rounded-md border px-3 py-2"
+                className={`w-45 rounded-md border px-3 py-2 ${errors.region ? 'border-destructive' : ''}`}
               >
                 <option value="">Select region</option>
 
@@ -200,6 +290,7 @@ export function AddressFormDialog() {
                   </option>
                 ))}
               </select>
+              { errors.region && (<FieldError>{errors.region}</FieldError>) }
           </Field>
 
           {/* --- Province Select ---  */}
@@ -208,7 +299,7 @@ export function AddressFormDialog() {
             <select
                 value={provinceCode}
                 onChange={getCity}
-                className="w-45 rounded-md border px-3 py-2"
+                className={`w-45 rounded-md border px-3 py-2 ${errors.province ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               >
                 <option value="">Select Province</option>
 
@@ -221,6 +312,7 @@ export function AddressFormDialog() {
                   </option>
                 ))}
               </select>
+              { errors.province && (<FieldError>{errors.province}</FieldError>) }
           </Field>
 
           {/* --- City/Municipality Select --- */}
@@ -229,7 +321,7 @@ export function AddressFormDialog() {
             <select
                 value={cityCode}
                 onChange={getBarangay}
-                className="w-45 rounded-md border px-3 py-2"
+                className={`w-45 rounded-md border px-3 py-2 ${errors.city ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               >
                 <option value="">Select City/Municipality</option>
 
@@ -242,6 +334,7 @@ export function AddressFormDialog() {
                   </option>
                 ))}
               </select>
+              { errors.city && (<FieldError>{errors.city}</FieldError>) }
           </Field>
 
           {/* --- Barangay Select --- */}
@@ -250,7 +343,7 @@ export function AddressFormDialog() {
             <select
                 value={barangayCode}
                 onChange={(e) => setBarangayCode(e.target.value)}
-                className="w-45 rounded-md border px-3 py-2"
+                className={`w-45 rounded-md border px-3 py-2 ${errors.barangay ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               >
                 <option value="">Select Barangay</option>
 
@@ -263,29 +356,33 @@ export function AddressFormDialog() {
                   </option>
                 ))}
               </select>
+              { errors.barangay && (<FieldError>{errors.barangay}</FieldError>) }
           </Field>
 
           <Field>
             <FieldLabel htmlFor="postalCode">Postal Code</FieldLabel>
-            <Input id="postalCode" name="postalCode" type="text" defaultValue="4027" />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="country">Country</FieldLabel>
-            <Input
-              id="country"
-              name="country"
-              type="text"
-              defaultValue="Philippines"
+            <Input 
+              id="postalCode" 
+              name="postalCode" 
+              type="text" 
+              aria-invalid={errors.postalCode ? true : false}
+              value={addressInformation.postalCode} 
+              onChange={handleOnChange}
             />
+            { errors.postalCode && (<FieldError>{errors.postalCode}</FieldError>) }
           </Field>
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline">
+          <Button type="button" disabled={isButtonLoading} variant="outline">
             Cancel
           </Button>
-          <Button onClick={save} type="button">Save Address</Button>
+          <Button onClick={save} disabled={isButtonLoading} type="button">
+            Save
+            {
+              isButtonLoading ? <Spinner data-icon="inline-start" /> : '' 
+            }
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

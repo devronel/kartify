@@ -18,3 +18,15 @@ export type Barangay = {
     brgyCode: string,
     brgyName: string
 }
+
+export type AddressInformation = {
+    label: string,
+    type: "SHIPPING" | "BILLING" | null,
+    recipientName: string,
+    phone: string,
+    addressLine1: string,
+    addressLine2: string,
+    postalCode: string,
+    country: "PH",
+    isDefault: boolean
+}
