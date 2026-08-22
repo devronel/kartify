@@ -9,28 +9,37 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
+import { Address } from "@/types/address"
 
-export function AddressCard() {
+export function AddressCard(props: Address) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Home
-          <Badge>Default</Badge>
+          { props.label }
+          {
+            props.isDefault ? <Badge>Default</Badge> : null
+          }
         </CardTitle>
         <CardAction>
-          <Badge variant="secondary">Shipping</Badge>
+          <Badge variant="secondary">
+            { props.type }
+          </Badge>
         </CardAction>
       </CardHeader>
 
       <CardContent>
-        <p className="font-medium">Juan Dela Cruz</p>
-        <p className="text-sm text-muted-foreground">09171234567</p>
-        <p className="mt-3 text-sm text-muted-foreground">
-          123 Rizal Street, Unit 4B
+        <p className="font-medium">
+          { props.recipientName }
         </p>
         <p className="text-sm text-muted-foreground">
-          Brgy. San Jose, Calamba City, Laguna 4027
+          { props.phone }
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          { props.addressLine1 } { props.addressLine2 ? `, ${props.addressLine2}` : null }
+        </p>
+        <p className="text-sm text-muted-foreground">
+          { `${props.barangay}, ${props.city}, ${props.province} ${props.postalCode}` }
         </p>
       </CardContent>
 

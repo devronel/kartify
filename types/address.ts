@@ -30,3 +30,20 @@ export type AddressInformation = {
     country: "PH",
     isDefault: boolean
 }
+
+export type Address = {
+    id: number
+    label: string
+    recipientName: string
+    type: string
+    phone: string
+    addressLine1: string
+    addressLine2: string | null
+    region: string
+    province: string
+    city: string
+    barangay: string
+    country: string
+    postalCode: string
+    isDefault: boolean
+}

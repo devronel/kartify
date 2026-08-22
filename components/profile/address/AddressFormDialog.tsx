@@ -1,19 +1,23 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
-import apiPsgcClient from "@/lib/api-psgc"
-import { useEffect, useMemo, useState } from "react"
-import { AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
 import { toast } from "@/components/ui/toast"
 import apiClient from "@/lib/api-client"
-import { Spinner } from "@/components/ui/spinner"
+import apiPsgcClient from "@/lib/api-psgc"
+import { Address, AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
 
-export function AddressFormDialog() {
+type AddressFormDialogProps = {
+  onCreated: (newAddress: Address) => void
+}
+
+export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
   
   const [regions, setRegions] = useState<Region[]>([])
   const [provinces, setProvinces] = useState<Province[]>([])
@@ -36,6 +40,7 @@ export function AddressFormDialog() {
   })
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   // --- Get value using onchange event ---
   const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,11 +138,18 @@ export function AddressFormDialog() {
     }
   }
 
+  // --- Close modal ---
+  const close = () => {
+    setIsModalOpen(false)
+    setErrors({})
+  }
+
   const regionMap = useMemo(() => Object.fromEntries(regions.map(region => [region.regCode, region.regionName])), [regions]);
   const provinceMap = useMemo(() => Object.fromEntries(provinces.map(province => [province.provCode, province.provName])), [provinces]);
   const cityMap = useMemo(() => Object.fromEntries(cities.map(city => [city.munCityCode, city.munCityName])), [cities]);
   const barangayMap = useMemo(() => Object.fromEntries(barangays.map(barangay => [barangay.brgyCode, barangay.brgyName])), [barangays]);
 
+  // --- Save data to database ---
   const save = async () => {
     try {
       
@@ -158,17 +170,40 @@ export function AddressFormDialog() {
       })
 
       if(response.data.success){
+        
+        onCreated(response.data.payload)
+
+        // --- Reset the state ---
         setIsButtonLoading(false)
+        setIsModalOpen(false)
+        setErrors({})
+        setRegionCode('')
+        setProvinceCode('')
+        setCityCode('')
+        setBarangayCode('')
+        setRegions([])
+        setProvinces([]);
+        setCities([])
+        setBarangays([])
+        setAddressInformation({
+          label: '',
+          type: "SHIPPING",
+          recipientName: '',
+          phone: '',
+          addressLine1: '',
+          addressLine2: '',
+          postalCode: '',
+          country: 'PH',
+          isDefault: false
+        })
       }
       
     } catch (error: any) {
       setIsButtonLoading(false)
       switch (error.status) {
         case 422:
-          console.log(error.response.data.errors)
           setErrors(error.response.data.errors)
           break;
-      
         default:
           console.log(error.response)
           break;
@@ -181,14 +216,14 @@ export function AddressFormDialog() {
   }, [])
 
   return (
-    <Dialog>
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger render={<Button><Plus /> Add New Address</Button>} />
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Address</DialogTitle>
+          <DialogTitle>Add Address</DialogTitle>
           <DialogDescription>
-            Update the details for this address.
+            Add your new address.
           </DialogDescription>
         </DialogHeader>
 
@@ -374,7 +409,7 @@ export function AddressFormDialog() {
         </div>
 
         <DialogFooter>
-          <Button type="button" disabled={isButtonLoading} variant="outline">
+          <Button onClick={close} type="button" disabled={isButtonLoading} variant="outline">
             Cancel
           </Button>
           <Button onClick={save} disabled={isButtonLoading} type="button">
