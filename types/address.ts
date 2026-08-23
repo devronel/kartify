@@ -5,16 +5,19 @@ export type Region = {
 }
 
 export type Province = {
+    regCode: string,
     provCode: string,
     provName: string
 }
 
 export type Municipality = {
+    provCode: string,
     munCityCode: string,
     munCityName: string
 }
 
 export type Barangay = {
+    munCityCode: string,
     brgyCode: string,
     brgyName: string
 }

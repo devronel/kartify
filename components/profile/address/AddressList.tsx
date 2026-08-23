@@ -2,13 +2,16 @@
 
 import apiClient from "@/lib/api-client"
 import { useEffect, useState } from "react"
-import { AddressCard } from "./AddressCard"
 import { AddressFormDialog } from "./AddressFormDialog"
 import { Address } from "@/types/address"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Pencil, Trash2 } from "lucide-react"
+import { AddressFormEditDialog } from "./AddressFormEditDialog"
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 
 export function AddressList() {
 
@@ -30,6 +33,14 @@ export function AddressList() {
             setIsFetchingData(false)
             setHasError(true)
         }
+    }
+
+    const syncUpdatedAddress = (address: Address) => {
+        setAddresses(prevAddresses => 
+            prevAddresses.map(prevAddress => 
+                prevAddress.id === address.id ? address : prevAddress
+            )
+        );
     }
 
     useEffect(() => {
@@ -54,6 +65,7 @@ export function AddressList() {
 
             <AddressListContent 
                 addresses={addresses}
+                syncUpdatedAddress={(address: Address) => syncUpdatedAddress(address)}
                 isFetchingData={isFetchingData}
                 hasError={hasError}
             />
@@ -62,11 +74,34 @@ export function AddressList() {
 }
 
 type AddressListContentProps = {
-    addresses: Address[]
+    addresses: Address[],
+    syncUpdatedAddress: (address: Address) => void,
     isFetchingData: boolean
     hasError: boolean
 }
-const AddressListContent = ({ addresses, isFetchingData, hasError }: AddressListContentProps) => {
+const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, hasError }: AddressListContentProps) => {
+
+    const [address, setAddress] = useState<Address | null>(null)
+
+    const editAddress = async (id: number) => {
+        try {
+            const response = await apiClient(`/api/account/address/${id}`)
+            if(response.data.success){
+                setAddress(response.data.payload)
+            }
+        } catch (error: any) {
+            toast.add({
+                type: "error",
+                description: error.message
+            })
+        }
+    }
+
+    // const updatedAddress = (address: Address) => {
+    //     setAddress(null)
+    //     syncUpdatedAddress(address)
+    // }
+
     if (isFetchingData) {
         return (
             <Badge>
@@ -89,13 +124,62 @@ const AddressListContent = ({ addresses, isFetchingData, hasError }: AddressList
     }
 
     return (
-        <div className="grid gap-6 md:grid-cols-2">
-            {addresses.map((address) => (
-                <AddressCard
-                    key={address.id}
-                    {...address}
-                />
-            ))}
-        </div>
+        <>
+            <div className="grid gap-6 md:grid-cols-2">
+                {addresses.map((address) => (
+                    <Card key={address.id}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                { address.label }
+                                {
+                                    address.isDefault ? <Badge>Default</Badge> : null
+                                }
+                            </CardTitle>
+                            <CardAction>
+                            <Badge variant="secondary">
+                                { address.type }
+                            </Badge>
+                            </CardAction>
+                        </CardHeader>
+
+                        <CardContent>
+                            <p className="font-medium">
+                                { address.recipientName }
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                { address.phone }
+                            </p>
+                            <p className="mt-3 text-sm text-muted-foreground">
+                                { address.addressLine1 } { address.addressLine2 ? `, ${address.addressLine2}` : null }
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                { `${address.barangay}, ${address.city}, ${address.province} ${address.postalCode}` }
+                            </p>
+                        </CardContent>
+
+                        <CardFooter className="flex-wrap gap-2 border-t">
+                            <Button onClick={() => editAddress(address.id)} type="button" variant="outline" size="sm">
+                                <Pencil />
+                                Edit
+                            </Button>
+                            <Button type="button" variant="destructive" size="sm">
+                                <Trash2 />
+                                Delete
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+            {/* Edit modal */}
+            {
+                address && (
+                    <AddressFormEditDialog 
+                        address={address}
+                        onModalClose={() => setAddress(null)}
+                        onUpdate={(address) => syncUpdatedAddress(address)}
+                    />
+                )
+            }
+        </>
     )
 }

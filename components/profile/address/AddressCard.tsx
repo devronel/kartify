@@ -1,15 +1,9 @@
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
 import { Address } from "@/types/address"
+import { AddressFormEditDialog } from "./AddressFormEditDialog"
 
 export function AddressCard(props: Address) {
   return (
@@ -53,6 +47,9 @@ export function AddressCard(props: Address) {
           Delete
         </Button>
       </CardFooter>
+
+      {/* Edit modal */}
+      {/* <AddressFormEditDialog /> */}
     </Card>
   )
 }
