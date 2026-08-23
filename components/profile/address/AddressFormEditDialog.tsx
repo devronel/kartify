@@ -282,7 +282,7 @@ export function AddressFormEditDialog(props: AddressFormDialogProps) {
 
   return (
     <Dialog open={props.address != null}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent showCloseButton={false} className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Address</DialogTitle>
           <DialogDescription>

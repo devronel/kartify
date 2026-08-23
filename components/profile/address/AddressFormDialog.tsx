@@ -2,22 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import apiClient from "@/lib/api-client"
-import apiPsgcClient from "@/lib/api-psgc"
 import { Address, AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
+import { loadPsgcData } from "@/lib/load-psgc-data"
 
 type AddressFormDialogProps = {
+  open: boolean,
+  onClose: () => void,
   onCreated: (newAddress: Address) => void
 }
 
-export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
+export function AddressFormDialog({ open, onClose, onCreated }: AddressFormDialogProps) {
   
   const [regions, setRegions] = useState<Region[]>([])
   const [provinces, setProvinces] = useState<Province[]>([])
@@ -40,7 +41,6 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
   })
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   // --- Get value using onchange event ---
   const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,11 +64,10 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
       setBarangays([])
       setBarangayCode("")
 
-      const response = await apiPsgcClient('/psgc/provinces.json')
-      if(response.status === 200){
-        const filteredProvinces = response.data.filter((province: { regCode: string }) => province.regCode === code);
-        setProvinces(filteredProvinces)
-      }
+      const { provinces: provincesList } = await loadPsgcData()
+      const filteredProvinces = provincesList.filter((province: Province) => province.regCode === code);
+      setProvinces(filteredProvinces)
+
     } catch (error: any) {
       toast.add({
         type: "error",
@@ -88,11 +87,10 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
       setBarangays([])
       setBarangayCode("")
 
-      const response = await apiPsgcClient('/psgc/cities.json')
-      if(response.status === 200){
-        const filteredCities = response.data.filter((city: { provCode: string }) => city.provCode === code);
-        setCities(filteredCities)
-      }
+      const { cities: citiesList } = await loadPsgcData()
+      const filteredCities = citiesList.filter((city: Municipality) => city.provCode === code);
+      setCities(filteredCities)
+
     } catch (error: any) {
       toast.add({
         type: "error",
@@ -110,11 +108,10 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
       setBarangays([])
       setBarangayCode("")
 
-      const response = await apiPsgcClient('/psgc/barangays.json')
-      if(response.status === 200){
-        const filteredBarangays = response.data.filter((barangay: { munCityCode: string }) => barangay.munCityCode === code);
-        setBarangays(filteredBarangays)
-      }
+      const { barangays: barangaysList } = await loadPsgcData()
+      const filteredBarangays = barangaysList.filter((barangay: Barangay) => barangay.munCityCode === code);
+      setBarangays(filteredBarangays)
+
     } catch (error: any) {
       toast.add({
         type: "error",
@@ -127,8 +124,8 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
   // -- Get All Region ---
   const getRegion = async () => {
     try {
-      const response = await apiPsgcClient('/psgc/regions.json')
-      setRegions(response.data)
+      const { regions: regionsList } = await loadPsgcData()
+      setRegions(regionsList)
     } catch (error: any) {
       toast.add({
         type: "error",
@@ -140,7 +137,7 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
 
   // --- Close modal ---
   const close = () => {
-    setIsModalOpen(false)
+    onClose()
     setErrors({})
   }
 
@@ -175,7 +172,7 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
 
         // --- Reset the state ---
         setIsButtonLoading(false)
-        setIsModalOpen(false)
+        onClose()
         setErrors({})
         setRegionCode('')
         setProvinceCode('')
@@ -216,10 +213,8 @@ export function AddressFormDialog({ onCreated }: AddressFormDialogProps) {
   }, [])
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogTrigger render={<Button><Plus /> Add New Address</Button>} />
-
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog open={open}>
+      <DialogContent showCloseButton={false} className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add Address</DialogTitle>
           <DialogDescription>

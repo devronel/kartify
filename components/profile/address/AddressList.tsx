@@ -7,7 +7,7 @@ import { Address } from "@/types/address"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, Pencil, Trash2 } from "lucide-react"
+import { AlertCircle, Pencil, Plus, Trash2 } from "lucide-react"
 import { AddressFormEditDialog } from "./AddressFormEditDialog"
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ export function AddressList() {
     const [addresses, setAddresses] = useState<Address[]>([])
     const [isFetchingData, setIsFetchingData] = useState<boolean>(false)
     const [hasError, setHasError] = useState<boolean>(false)
+    const [isOpenCreateModal, setIsOpenCreateModal] = useState<boolean>(false)
 
     const getAddressList = async () => {
         try {
@@ -56,11 +57,20 @@ export function AddressList() {
                     Manage the addresses you use for shipping and billing.
                     </p>
                 </div>
-                <AddressFormDialog 
-                    onCreated={(newAddress) => {
-                        setAddresses((prev) => [...prev, newAddress])
-                    }}
-                />
+                <Button onClick={() => setIsOpenCreateModal(true)}>
+                    <Plus /> Add New Address
+                </Button>
+                {
+                    isOpenCreateModal && (
+                        <AddressFormDialog 
+                            open={isOpenCreateModal}
+                            onClose={() => setIsOpenCreateModal(false)}
+                            onCreated={(newAddress) => {
+                                setAddresses((prev) => [...prev, newAddress])
+                            }}
+                        />
+                    )
+                }
             </div>
 
             <AddressListContent 
@@ -96,11 +106,6 @@ const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, has
             })
         }
     }
-
-    // const updatedAddress = (address: Address) => {
-    //     setAddress(null)
-    //     syncUpdatedAddress(address)
-    // }
 
     if (isFetchingData) {
         return (
