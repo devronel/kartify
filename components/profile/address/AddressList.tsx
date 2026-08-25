@@ -12,6 +12,8 @@ import { AddressFormEditDialog } from "./AddressFormEditDialog"
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
+import { Field, FieldLabel } from "@/components/ui/field"
+import { Switch } from "@/components/ui/switch"
 
 export function AddressList() {
 
@@ -20,6 +22,7 @@ export function AddressList() {
     const [hasError, setHasError] = useState<boolean>(false)
     const [isOpenCreateModal, setIsOpenCreateModal] = useState<boolean>(false)
 
+    // --- Get List of user address ---
     const getAddressList = async () => {
         try {
             setIsFetchingData(true)
@@ -36,12 +39,34 @@ export function AddressList() {
         }
     }
 
+    // --- Sync the updated address to the UI ---
     const syncUpdatedAddress = (address: Address) => {
         setAddresses(prevAddresses => 
             prevAddresses.map(prevAddress => 
                 prevAddress.id === address.id ? address : prevAddress
             )
         );
+    }
+
+    // --- Update the default address in the array object ---
+    const onIsDefault = (address: Address) => {
+        setAddresses((prev) =>
+            prev.map((item) => ({
+                ...item,
+                isDefault: item.id === address.id,
+            }))
+        );
+    }
+
+    // --- Add the newly created address in the addresses list ---
+    const addCreatedAddress = (newAddress: Address) => {
+        setAddresses((prev) => [
+            ...prev.map((address) => ({
+                ...address,
+                isDefault: newAddress.isDefault ? false : address.isDefault,
+            })),
+            newAddress,
+        ]);
     }
 
     useEffect(() => {
@@ -65,9 +90,7 @@ export function AddressList() {
                         <AddressFormDialog 
                             open={isOpenCreateModal}
                             onClose={() => setIsOpenCreateModal(false)}
-                            onCreated={(newAddress) => {
-                                setAddresses((prev) => [...prev, newAddress])
-                            }}
+                            onCreated={(newAddress) => addCreatedAddress(newAddress)}
                         />
                     )
                 }
@@ -76,6 +99,7 @@ export function AddressList() {
             <AddressListContent 
                 addresses={addresses}
                 syncUpdatedAddress={(address: Address) => syncUpdatedAddress(address)}
+                onIsDefault={(address: Address) => onIsDefault(address)}
                 isFetchingData={isFetchingData}
                 hasError={hasError}
             />
@@ -83,17 +107,22 @@ export function AddressList() {
     )
 }
 
+
+// --- Address List Content Component ---
+
 type AddressListContentProps = {
     addresses: Address[],
     syncUpdatedAddress: (address: Address) => void,
+    onIsDefault: (address: Address) => void,
     isFetchingData: boolean
     hasError: boolean
 }
-const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, hasError }: AddressListContentProps) => {
+const AddressListContent = ({ addresses, syncUpdatedAddress, onIsDefault, isFetchingData, hasError }: AddressListContentProps) => {
 
     const [address, setAddress] = useState<Address | null>(null)
 
-    const editAddress = async (id: number) => {
+    // --- Update Address Information ---
+    const updateAddress = async (id: number) => {
         try {
             const response = await apiClient(`/api/account/address/${id}`)
             if(response.data.success){
@@ -103,6 +132,22 @@ const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, has
             toast.add({
                 type: "error",
                 description: error.message
+            })
+        }
+    }
+
+    // --- Set Default Address
+    const makeIsDefault = async (id: number, isDefault: boolean) => {
+        try {
+            const response = await apiClient.patch(`/api/account/address/${id}/default`)
+            if(response.data.success){
+                onIsDefault(response.data.payload)
+            }
+        } catch (error: any) {
+            toast.add({
+                type: "error",
+                description: "Something wen't wrong!",
+                priority: 'high'
             })
         }
     }
@@ -141,9 +186,9 @@ const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, has
                                 }
                             </CardTitle>
                             <CardAction>
-                            <Badge variant="secondary">
-                                { address.type }
-                            </Badge>
+                                <Badge variant="secondary">
+                                    { address.type }
+                                </Badge>
                             </CardAction>
                         </CardHeader>
 
@@ -162,22 +207,38 @@ const AddressListContent = ({ addresses, syncUpdatedAddress, isFetchingData, has
                             </p>
                         </CardContent>
 
-                        <CardFooter className="flex-wrap gap-2 border-t">
-                            <Button onClick={() => editAddress(address.id)} type="button" variant="outline" size="sm">
-                                <Pencil />
-                                Edit
-                            </Button>
-                            <Button type="button" variant="destructive" size="sm">
-                                <Trash2 />
-                                Delete
-                            </Button>
+                        <CardFooter className="flex items-center justify-between border-t">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button onClick={() => updateAddress(address.id)} type="button" variant="outline" size="sm">
+                                    <Pencil />
+                                    Edit
+                                </Button>
+                                <Button type="button" variant="destructive" size="sm">
+                                    <Trash2 />
+                                    Delete
+                                </Button>
+                            </div>
+                            {
+                                !address.isDefault ? (
+                                    <Field orientation="horizontal" className="inline-flex w-auto">
+                                        <Switch
+                                            onCheckedChange={(value) => makeIsDefault(address.id, value)} 
+                                            disabled={address.isDefault}
+                                            id={`makeDefault-${address.id}`}
+                                            size="sm" 
+                                        />
+                                        <FieldLabel htmlFor={`makeDefault-${address.id}`}>Make this Default</FieldLabel>
+                                    </Field>
+                                ) : null
+                            }
                         </CardFooter>
                     </Card>
                 ))}
             </div>
+
             {/* Edit modal */}
             {
-                address && (
+                address && ( 
                     <AddressFormEditDialog 
                         address={address}
                         onModalClose={() => setAddress(null)}

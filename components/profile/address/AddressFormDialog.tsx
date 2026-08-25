@@ -11,6 +11,7 @@ import { toast } from "@/components/ui/toast"
 import apiClient from "@/lib/api-client"
 import { Address, AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
 import { loadPsgcData } from "@/lib/load-psgc-data"
+import { Switch } from "@/components/ui/switch"
 
 type AddressFormDialogProps = {
   open: boolean,
@@ -222,7 +223,20 @@ export function AddressFormDialog({ open, onClose, onCreated }: AddressFormDialo
           </DialogDescription>
         </DialogHeader>
 
+        <div>
+          <Field orientation="horizontal" className="inline-flex w-auto">
+            <Switch 
+              id="switch-size-default" 
+              size="default" 
+              checked={addressInformation.isDefault}
+              onCheckedChange={(value) => setAddressInformation(prev => ({ ...prev, isDefault: value }))}
+            />
+            <FieldLabel htmlFor="switch-size-default">Make this Default</FieldLabel>
+          </Field>
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-2">
+
           <Field>
             <FieldLabel htmlFor="addressLabel">Label</FieldLabel>
             <Input
