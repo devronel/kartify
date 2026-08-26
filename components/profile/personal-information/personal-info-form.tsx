@@ -61,7 +61,13 @@ export function PersonalInfoForm(props: UserData) {
 
       setIsButtonLoading(true)
 
-      const response = await apiClient.post('/api/account/profile', data, {
+      // --- Convert gender into null if empty string to avoid error from backend ---
+      const payload = {
+        ...data,
+        gender: data.gender === '' ? null : data.gender
+      }
+
+      const response = await apiClient.post('/api/account/profile', payload, {
         headers: {
           "Content-Type": "application/json"
         }
@@ -183,8 +189,12 @@ export function PersonalInfoForm(props: UserData) {
 
           <Field>
             <FieldLabel htmlFor="gender">Gender</FieldLabel>
-            <Select onValueChange={(value) => setStateData("gender", value)} name="gender" value={data.gender}>
-              <SelectTrigger id="gender" className="w-full">
+            <Select
+                onValueChange={(value) => setStateData("gender", value)} 
+                name="gender" 
+                value={data.gender}
+              >
+              <SelectTrigger aria-invalid={errors.gender ? true : false} id="gender" className="w-full">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
               <SelectContent>
@@ -193,6 +203,7 @@ export function PersonalInfoForm(props: UserData) {
                 <SelectItem value="FEMALE">Female</SelectItem>
               </SelectContent>
             </Select>
+            { errors.gender && (<FieldError>{errors.gender}</FieldError>) }
           </Field>
         </div>
       </CardContent>

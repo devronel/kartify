@@ -19,7 +19,7 @@ type AddressFormDialogProps = {
   onCreated: (newAddress: Address) => void
 }
 
-export function AddressFormDialog({ open, onClose, onCreated }: AddressFormDialogProps) {
+export function AddressFormCreateDialog({ open, onClose, onCreated }: AddressFormDialogProps) {
   
   const [regions, setRegions] = useState<Region[]>([])
   const [provinces, setProvinces] = useState<Province[]>([])

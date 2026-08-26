@@ -28,7 +28,7 @@ const mainItems = [
   { label: "Account", href: "/profile/account", icon: UserLock },
 ];
 
-export function ProfileSidebar() {
+export default function ProfileSidebar() {
   const pathname = usePathname();
 
   return (

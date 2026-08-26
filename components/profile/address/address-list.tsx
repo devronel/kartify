@@ -2,18 +2,19 @@
 
 import apiClient from "@/lib/api-client"
 import { useEffect, useState } from "react"
-import { AddressFormDialog } from "./AddressFormDialog"
+import { AddressFormCreateDialog } from "./address-form-create-dialog"
 import { Address } from "@/types/address"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, Pencil, Plus, Trash2 } from "lucide-react"
-import { AddressFormEditDialog } from "./AddressFormEditDialog"
+import { AddressFormEditDialog } from "./address-form-edit-dialog"
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Switch } from "@/components/ui/switch"
+import { EmptyState } from "@/components/shared/empty-state"
 
 export function AddressList() {
 
@@ -87,7 +88,7 @@ export function AddressList() {
                 </Button>
                 {
                     isOpenCreateModal && (
-                        <AddressFormDialog 
+                        <AddressFormCreateDialog 
                             open={isOpenCreateModal}
                             onClose={() => setIsOpenCreateModal(false)}
                             onCreated={(newAddress) => addCreatedAddress(newAddress)}
@@ -171,6 +172,10 @@ const AddressListContent = ({ addresses, syncUpdatedAddress, onIsDefault, isFetc
                 </AlertDescription>
             </Alert>
         )
+    }
+
+    if(addresses.length <= 0) {
+        return <EmptyState />
     }
 
     return (

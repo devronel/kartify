@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
 import { Address } from "@/types/address"
-import { AddressFormEditDialog } from "./AddressFormEditDialog"
+import { AddressFormEditDialog } from "./address-form-edit-dialog"
 
 export function AddressCard(props: Address) {
   return (
