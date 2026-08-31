@@ -18,10 +18,11 @@ import { Spinner } from "@/components/ui/spinner"
 
 type CategoryModalCreateProps = {
     open: boolean,
-    onOpenModal: () => void
+    onOpenModal: () => void,
+    onFetchCategories: () => Promise<void>
 }
 
-export default function CategoryModalCreate({ open, onOpenModal } : CategoryModalCreateProps ) {
+export default function CategoryModalCreate({ open, onOpenModal, onFetchCategories } : CategoryModalCreateProps ) {
 
     const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -59,6 +60,7 @@ export default function CategoryModalCreate({ open, onOpenModal } : CategoryModa
             })
 
             if(response.data.success){
+                onFetchCategories()
                 setErrors({})
                 onOpenModal()
             }

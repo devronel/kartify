@@ -1,16 +1,20 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Check, ChevronRight, FolderIcon, FolderTree, Pencil, Plus, Trash2 } from "lucide-react"
+import { ChevronRight, FolderIcon, FolderOpen, Pencil, Plus, Trash2 } from "lucide-react"
 import CategoryModalCreate from "./category-modal-create"
 import React, { useEffect, useState } from "react"
 import { CategoryTree } from "@/types/admin/category"
 import apiClient from "@/lib/api-client"
+import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
+import ErrorFetchingIndicator from "@/components/shared/error-fetching-indicator"
 
 export default function CategoryList() {
     
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
     const [categories, setCategories] = useState<CategoryTree[]>([])
+    const [isFetchingCategories, setIsFetchingCategories] = useState<boolean>(false)
+    const [hasError, setHasError] = useState<string | null>(null)
 
     const closeCreateModal = () => {
         setIsModalOpen(prev => !prev)
@@ -18,11 +22,13 @@ export default function CategoryList() {
 
     const getCategories = async () => {
         try {
+            setIsFetchingCategories(true)
             const response = await apiClient('/api/product/category')
-            console.log(response.data)
             setCategories(response.data)
         } catch (error: any) {
-            console.log(error.message)
+            setHasError(error.message)
+        } finally {
+            setIsFetchingCategories(false)
         }
     }
 
@@ -46,20 +52,39 @@ export default function CategoryList() {
                     </Button>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-sidebar-border bg-sidebar">
-                    <CategoryCardList 
-                        nodes={categories}
-                        level={0}
-                    />
-                </div>
+                {
+                    !isFetchingCategories ? (
+                        !hasError ? (
+                            <div className="overflow-hidden rounded-xl border border-sidebar-border bg-sidebar">
+                                <CategoryCardList 
+                                    nodes={categories}
+                                    level={0}
+                                />
+                            </div>
+                        ) : (
+                            <ErrorFetchingIndicator 
+                                title="Unable to load categories"
+                                description="We couldn't retrieve the categories. Please try again."
+                                onRetry={getCategories}
+                            />
+    
+                        )
+                    ) : (
+                        <DataFetchingIndicator 
+                            title="Loading categories"
+                            description="Please wait while we fetch the categories."
+                        />
+                    )
+                }
 
             </div>
 
             {
                 isModalOpen && (
                     <CategoryModalCreate 
-                         open={isModalOpen}
-                         onOpenModal={closeCreateModal}
+                        open={isModalOpen}
+                        onOpenModal={closeCreateModal}
+                        onFetchCategories={getCategories}
                     />
                 )
             }
@@ -118,7 +143,9 @@ const CategoryCardList = ({ nodes, level = 0 } : CategoryCardListProps) => {
                                 )
                             }
 
-                            <FolderIcon className="size-4 shrink-0 text-sidebar-foreground/40" />
+                            {
+                                isExpanded ? <FolderOpen className="size-4 shrink-0 text-sidebar-foreground/40" /> : <FolderIcon className="size-4 shrink-0 text-sidebar-foreground/40" />
+                            }
 
                             <div className="min-w-0 flex-1">
                                 <p className="flex items-center gap-2 truncate text-sm font-medium text-sidebar-foreground">
