@@ -1,7 +1,10 @@
 export type CategoryTree = {
   id: number;
+  parentId: number;
   name: string;
+  slug: string,
   isActive: boolean;
+  productCount: number;
   children: CategoryTree[];
 };
 
