@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/toast"
 import { Address, Barangay, Municipality, Province, Region } from "@/types/address"
 import { loadPsgcData } from "@/lib/load-psgc-data"
-import apiClient from "@/lib/api-client"
+import apiClient, { isAxiosError } from "@/lib/api-client"
+import { ValidationErrorResponse } from "@/types/api-error"
 
 type AddressFormDialogProps = {
   address: Address | null,
@@ -257,22 +258,24 @@ export function AddressFormEditDialog(props: AddressFormDialogProps) {
       if(response.data.success){
 
         // --- Reset the state ---
-        setIsButtonLoading(false)
         setErrors({})
         onModalClose()
         onUpdate(response.data.payload)
       }
       
     } catch (error: any) {
-      setIsButtonLoading(false)
-      switch (error.status) {
-        case 422:
+      if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
           setErrors(error.response.data.errors)
-          break;
-        default:
-          console.log(error.response)
-          break;
+          return
       }
+
+      toast.add({
+          type: 'Error',
+          description: "Something went wrong."
+      })
+      
+    } finally {
+      setIsButtonLoading(false)
     }
   }
 

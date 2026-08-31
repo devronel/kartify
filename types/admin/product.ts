@@ -11,12 +11,6 @@ export type ProductData = {
   weightUnit: "kg" | "g"
 }
 
-export type CategoryNode = {
-  id: number
-  name: string
-  children?: CategoryNode[]
-}
-
 export type AttributeValue = {
   id: number
   name: string

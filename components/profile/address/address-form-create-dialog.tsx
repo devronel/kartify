@@ -8,10 +8,11 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/toast"
-import apiClient from "@/lib/api-client"
+import apiClient, { isAxiosError } from "@/lib/api-client"
 import { Address, AddressInformation, Barangay, Municipality, Province, Region } from "@/types/address"
 import { loadPsgcData } from "@/lib/load-psgc-data"
 import { Switch } from "@/components/ui/switch"
+import { ValidationErrorResponse } from "@/types/api-error"
 
 type AddressFormDialogProps = {
   open: boolean,
@@ -172,7 +173,6 @@ export function AddressFormCreateDialog({ open, onClose, onCreated }: AddressFor
         onCreated(response.data.payload)
 
         // --- Reset the state ---
-        setIsButtonLoading(false)
         onClose()
         setErrors({})
         setRegionCode('')
@@ -197,15 +197,17 @@ export function AddressFormCreateDialog({ open, onClose, onCreated }: AddressFor
       }
       
     } catch (error: any) {
-      setIsButtonLoading(false)
-      switch (error.status) {
-        case 422:
+      if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
           setErrors(error.response.data.errors)
-          break;
-        default:
-          console.log(error.response)
-          break;
+          return
       }
+
+      toast.add({
+          type: 'Error',
+          description: "Something went wrong."
+      })
+    } finally {
+      setIsButtonLoading(false)
     }
   }
 

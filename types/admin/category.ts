@@ -1,8 +1,8 @@
-export type CategoryTreeType = {
+export type CategoryTree = {
   id: number;
   name: string;
   isActive: boolean;
-  children: CategoryTreeType[];
+  children: CategoryTree[];
 };
 
 export type Category = {
@@ -11,9 +11,18 @@ export type Category = {
     isActive: boolean;
 }
 
+export type CategoryFormValues = {
+    id?: number,
+    name: string,
+    parentId: number | null,
+    description: string,
+    isActive: boolean
+}
+
 export type CategoryTreeNodeProps = {
-  nodes: CategoryTreeType[];
+  nodes: CategoryTree[];
   level: number,
   onSelected: (category: Category) => void,
   value: Category | null
 };
+

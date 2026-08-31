@@ -2,25 +2,30 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Field, FieldLabel } from "@/components/ui/field"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { Category } from "@/types/admin/category"
+import { Category, CategoryFormValues } from "@/types/admin/category"
 import { Check, Plus} from "lucide-react"
 import React, { useState } from "react"
 import SelectCategory from "./category-select"
+import apiClient, { isAxiosError } from "@/lib/api-client"
+import { toast } from "@/components/ui/toast"
+import { ValidationErrorResponse } from "@/types/api-error"
+import { Spinner } from "@/components/ui/spinner"
 
-type CategoryDataTypes = {
-    name: string,
-    parentId: number | null,
-    description: string,
-    isActive: boolean
+
+type CategoryModalCreateProps = {
+    open: boolean,
+    onOpenModal: () => void
 }
 
-export default function CategoryModalCreate() {
+export default function CategoryModalCreate({ open, onOpenModal } : CategoryModalCreateProps ) {
 
-    const [category, setCategory] = useState<CategoryDataTypes>({
+    const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
+    const [errors, setErrors] = useState<Record<string, string>>({})
+    const [category, setCategory] = useState<CategoryFormValues>({
         name: '',
         parentId: null,
         description: '',
@@ -44,21 +49,38 @@ export default function CategoryModalCreate() {
         }
     }
 
-    const save = () => {
-        console.log(category)
+    const save = async () => {
+        try {
+            setIsButtonLoading(true)
+            const response = await apiClient.post('/api/product/category', category, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+
+            if(response.data.success){
+                setErrors({})
+                onOpenModal()
+            }
+
+        } catch (error: any) {
+            if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
+                setErrors(error.response.data.errors)
+                return
+            }
+
+            toast.add({
+                type: 'Error',
+                description: "Something went wrong."
+            })
+        } finally {
+            setIsButtonLoading(false)
+        }
     }
 
     return (
         <>
-            <Dialog>
-                <DialogTrigger render={
-                        <Button>
-                            <Plus className="size-4" />
-                            Add Category
-                        </Button>
-                    }>
-                    Open
-                </DialogTrigger>
+            <Dialog open={open} onOpenChange={onOpenModal}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="text-lg font-semibold">
@@ -78,10 +100,12 @@ export default function CategoryModalCreate() {
                             id="CategoryName"
                             name="name"
                             type="text"
+                            aria-invalid={errors.name ? true : false}
                             value={category.name}
                             onChange={handleOnChange}
                             placeholder="e.g. Shirts"
                         />
+                        { errors.name && (<FieldError>{errors.name}</FieldError>) }
                     </Field>
 
                     <Field>
@@ -119,11 +143,13 @@ export default function CategoryModalCreate() {
                     </Field>
 
                     <div className="flex shrink-0 items-center justify-end gap-2 border-t border-sidebar-border py-3">
-                        <Button type="button" variant="outline">
+                        <Button onClick={ onOpenModal} disabled={isButtonLoading} type="button" variant="outline" className='cursor-pointer'>
                             Cancel
                         </Button>
-                        <Button onClick={save} type="button">
-                            <Check className="size-4" />
+                        <Button onClick={save} disabled={isButtonLoading} type="button" className='cursor-pointer'>
+                            {
+                                isButtonLoading ? <Spinner className="size-4" /> : <Check className="size-4" />
+                            }
                             Save
                         </Button>
                     </div>

@@ -3,11 +3,16 @@
 import { Button } from "@/components/ui/button"
 import { Check, FolderTree, Plus } from "lucide-react"
 import CategoryModalCreate from "./category-modal-create"
-import apiClient from "@/lib/api-client"
-import React, { useEffect, useState } from "react"
+import { useState } from "react"
 
 export default function CategoryList() {
     
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+
+    const closeCreateModal = () => {
+        setIsModalOpen(prev => !prev)
+    }
+
     return (
         <>
             <div>
@@ -18,9 +23,21 @@ export default function CategoryList() {
                             Organize your catalog with nested categories
                         </p>
                     </div>
-                     <CategoryModalCreate />
+                    <Button onClick={() => setIsModalOpen(true)} className="cursor-pointer">
+                        <Plus className="size-4" />
+                        Add Category
+                    </Button>
                 </div>
            </div>
+
+            {
+                isModalOpen && (
+                    <CategoryModalCreate 
+                         open={isModalOpen}
+                         onOpenModal={closeCreateModal}
+                    />
+                )
+            }
         </>
     )
 }
