@@ -1,69 +1,10 @@
-import ProductCreateForm from "@/components/admin/products/ProductCreateForm";
-import { Attribute, CategoryNode } from "@/types/admin/product";
+import ProductFormCreate from "@/components/admin/products/product-form-create";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-const categories: CategoryNode[] = [
-  {
-    id: 1,
-    name: "Clothing",
-    children: [
-      {
-        id: 2,
-        name: "Men",
-        children: [
-          { id: 3, name: "Shirts" },
-          { id: 4, name: "Pants" },
-        ],
-      },
-      {
-        id: 5,
-        name: "Women",
-        children: [
-          { id: 6, name: "Dresses" },
-          { id: 7, name: "Skirts" },
-        ],
-      },
-    ],
-  },
-  {
-    id: 8,
-    name: "Footwear",
-    children: [
-      { id: 9, name: "Sneakers" },
-      { id: 10, name: "Boots" },
-    ],
-  },
-  {
-    id: 11,
-    name: "Accessories",
-    children: [
-      { id: 12, name: "Bags" },
-      { id: 13, name: "Watches" },
-    ],
-  },
-]
-
-const existingProductAttibutes: Attribute[] = [
-  {
-    id: 1,
-    name: "Size",
-    values: [
-      { id: 11, name: "Small" },
-      { id: 12, name: "Medium" },
-      { id: 13, name: "Large" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Color",
-    values: [
-      { id: 21, name: "Red" },
-      { id: 22, name: "Black" },
-      { id: 23, name: "White" },
-    ],
-  },
-]
+export const metadata = {
+  title: "Admin - Create Product"
+};
 
 export default function ProductCreatePage(){
   return (
@@ -84,7 +25,7 @@ export default function ProductCreatePage(){
         </Link>
       </div>
 
-      <ProductCreateForm categories={categories} existingProductAttibutes={existingProductAttibutes} />
+      <ProductFormCreate />
 
     </div>
   )
