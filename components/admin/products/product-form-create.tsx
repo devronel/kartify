@@ -3,8 +3,8 @@
 import { Field, FieldLabel } from "@/components/ui/field";
 import SectionCard from "../shared/SectionCard";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
-import { ChevronDownIcon, GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
 import SelectCategory from "../categories/category-select";
 import { Category } from "@/types/admin/category";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,15 +13,12 @@ import Image from "next/image";
 import { slugify, slugifyFinal, uid } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
 import { ProductFormValues, ProductImage } from "@/types/product";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import ProductAttributeList from "./components/product-attribute-list";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_IMAGE_SIZE_MB = 5
-
-const inputClass = "w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-sm text-sidebar-foreground placeholder-sidebar-foreground/40 outline-none focus:border-sidebar-ring focus:ring-1 focus:ring-sidebar-ring transition-colors"
-const errorInputClass = "border-red-500/60 focus:border-red-500 focus:ring-red-500/20"
-const labelClass = "block text-sm font-medium text-sidebar-foreground mb-1.5"
 
 export default function ProductFormCreate(){
 
@@ -41,7 +38,9 @@ export default function ProductFormCreate(){
         comparePrice: 0.00,
         costPrice: 0.00,
         weight: 0,
-        weightUnit: 'kg'
+        weightUnit: 'kg',
+        hasVariant: true,
+        stockQuantity: 0
     });
 
     // Selected Category
@@ -153,8 +152,8 @@ export default function ProductFormCreate(){
 
     // Save Data
     const save = () => {
-        console.log(images)
-        console.log(formData)
+        // console.log(images)
+        // console.log(formData)
     }
 
     return (
@@ -519,6 +518,67 @@ export default function ProductFormCreate(){
                             </div>
                         </div>
                     </div>
+                </SectionCard>
+
+                {/* Product Variant */}
+                <SectionCard
+                    title="Inventory / Variants"
+                    subtitle="Stock and size/color combinations"
+                    action={
+                        <div className="flex items-center gap-3">
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-sidebar-foreground">Has Variants?</p>
+                                <p className="text-xs text-sidebar-foreground/50">
+                                    {formData.hasVariant ? "Multiple size/color combos" : "Simple product"}
+                                </p>
+                            </div>
+                            <Switch 
+                                id="hasVariant" 
+                                checked={formData.hasVariant} 
+                                onCheckedChange={(value) => setFormData(prev => ({ ...prev, hasVariant: value }))} 
+                            />
+                        </div>
+                    }
+                >
+                    {
+                        !formData.hasVariant ? (
+                            <div className="sm:max-w-xs">
+                                <Field>
+                                    <FieldLabel htmlFor="productStockQuantity">
+                                        Stock Quantity <span className="text-red-500">*</span>
+                                    </FieldLabel>
+                                    <Input
+                                        id="productStockQuantity"
+                                        name="stockQuantity"
+                                        type="number"
+                                        inputMode="numeric"
+                                        min="0"
+                                        step="1"
+                                        placeholder="0"
+                                        value={formData.stockQuantity}
+                                        onChange={handleChange}
+                                    />
+                                </Field>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="mb-3 flex items-center gap-2">
+                                    <span className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground/60">
+                                        1
+                                    </span>
+                                    <h3 className="text-sm font-semibold text-sidebar-foreground">Attribute Selection</h3>
+                                    </div>
+                                    <p className="mb-4 text-sm text-sidebar-foreground/60">
+                                    Choose the attributes and values your variants are made of.
+                                    </p>
+                                </div>
+                                <ProductAttributeList />
+                            </div>
+                        )
+                    }
+                    
+
                 </SectionCard>
 
                 <Button

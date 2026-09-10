@@ -10,6 +10,20 @@ export type ProductFormValues = {
     costPrice: number,
     weight: number,
     weightUnit: 'kg' | 'g',
+    hasVariant: boolean,
+    stockQuantity: number
+}
+
+export type ProductAttribute = {
+  id: number,
+  name: string,
+  values: ProductAttributeValue[]
+}
+
+export type ProductAttributeValue = {
+  id: number,
+  productAttributeId: number,
+  productAttributeValueName: string
 }
 
 export type ProductImage = {
