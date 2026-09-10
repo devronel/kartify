@@ -3,44 +3,77 @@
 import { Field, FieldLabel } from "@/components/ui/field";
 import SectionCard from "../shared/SectionCard";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
-import { GripVertical, Lock, Pencil, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { ChevronDownIcon, GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
 import SelectCategory from "../categories/category-select";
 import { Category } from "@/types/admin/category";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import Image from "next/image";
-import { uid } from "@/lib/helper";
+import { slugify, slugifyFinal, uid } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
+import { ProductFormValues, ProductImage } from "@/types/product";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_IMAGE_SIZE_MB = 5
 
-type ProductImage = {
-  id: string
-  file: File
-  preview: string
-  isPrimary: boolean
-  sortOrder: number
-}
+const inputClass = "w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-sm text-sidebar-foreground placeholder-sidebar-foreground/40 outline-none focus:border-sidebar-ring focus:ring-1 focus:ring-sidebar-ring transition-colors"
+const errorInputClass = "border-red-500/60 focus:border-red-500 focus:ring-red-500/20"
+const labelClass = "block text-sm font-medium text-sidebar-foreground mb-1.5"
 
 export default function ProductFormCreate(){
 
-    const [dragOver, setDragOver] = useState<boolean>(false);
-    const [dragIndex, setDragIndex] = useState<number | null>(null);
-    const [imagesError, setImagesError] = useState<string>("");
+    const [dragOver, setDragOver] = useState<boolean>(false)
+    const [dragIndex, setDragIndex] = useState<number | null>(null)
+    const [imagesError, setImagesError] = useState<string>("")
+    const [slugEditing, setSlugEditing] = useState<boolean>(false)
     const [images, setImages] = useState<ProductImage[]>([])
+    const [formData, setFormData] = useState<ProductFormValues>({
+        name: '',
+        slug: '',
+        categoryId: null,
+        sku: '',
+        shortDescription: '',
+        description: '',
+        basePrice: 0.00,
+        comparePrice: 0.00,
+        costPrice: 0.00,
+        weight: 0,
+        weightUnit: 'kg'
+    });
 
     // Selected Category
     const selectedCategories = (category: Category) => {
-        console.log(category)
-        // if(category){
-        //     setCategory(prev => ({
-        //         ...prev,
-        //         parentId: category.id
-        //     }))
-        // }
+        if(category){
+            setFormData(prev => ({
+                ...prev,
+                categoryId: category.id
+            }))
+        }
     }
+
+    // Handles input and textarea changes
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = event.target;
+        setFormData(prev => {
+            const updatedData = {
+                ...prev,
+                [name]: value
+            };
+        
+            if (name === 'name' && !slugEditing) {
+                updatedData.slug = slugify(value);
+            }
+    
+            if (name === 'slug' && slugEditing) {
+                updatedData.slug = slugify(value); 
+            }
+    
+            return updatedData;
+        })
+    };
 
     // Add images
     const addImageFiles = (files: FileList | File[]) => {
@@ -102,14 +135,33 @@ export default function ProductFormCreate(){
         console.log("Running Remove Image")
     }
 
+    // Get slug on blur input
+    const handleSlugBlur = () => {
+        setFormData(prev => ({
+            ...prev,
+            slug: slugifyFinal(prev.slug)
+        }));
+    };
+
+    // Regenerate slug from name
+    const regenerateSlug = () => {
+        setFormData(prev => ({
+            ...prev,
+            slug: slugify(formData.name)
+        }));
+    }
+
     // Save Data
     const save = () => {
         console.log(images)
+        console.log(formData)
     }
 
     return (
         <>
             <div className="space-y-6">
+                
+                {/* Product Basic Information */}
                 <SectionCard title="Basic Info" subtitle="Name, category and description of your product" >
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                         
@@ -121,9 +173,11 @@ export default function ProductFormCreate(){
                                 </FieldLabel>
                                 <Input 
                                     id="productName" 
-                                    name="productName"
+                                    name="name"
                                     type="text" 
                                     placeholder="e.g. Minimal Cotton T-Shirt" 
+                                    value={formData.name}
+                                    onChange={handleChange}
                                 />
                             </Field>
                         </div>
@@ -132,53 +186,63 @@ export default function ProductFormCreate(){
                         <div className="md:col-span-2">
                             <div className="flex items-end gap-2">
                                 <Field>
-                                    <FieldLabel htmlFor="slug">
+                                    <FieldLabel htmlFor="productSlug">
                                         Slug <span className="text-red-500">*</span>
                                     </FieldLabel>
                                     <InputGroup>
                                         <InputGroupInput 
-                                            id="slug" 
+                                            id="productSlug" 
                                             name="slug"
                                             type="text"
-                                            placeholder="auto-generated-from-name" 
+                                            placeholder="auto-generated-from-name"
+                                            onBlur={handleSlugBlur}
+                                            readOnly={!slugEditing}
+                                            disabled={!slugEditing}
+                                            value={formData.slug}
+                                            onChange={handleChange} 
                                         />
                                         <InputGroupAddon>
                                             <InputGroupText>/products/</InputGroupText>
                                         </InputGroupAddon>
                                     </InputGroup>
                                 </Field>
-                                {false ? (
-                                    <>
+                                {
+                                    slugEditing ? (
+                                        <>
+                                            <button
+                                                type="button"
+                                                title="Regenerate from name"
+                                                onClick={regenerateSlug}
+                                                className="cursor-pointer rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                            >
+                                                <RefreshCw className="size-4" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                title="Lock slug (auto-generate from name)"
+                                                onClick={() => setSlugEditing(false)}
+                                                className="cursor-pointer rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                            >
+                                                <Lock className="size-4" />
+                                            </button>
+                                        </>
+                                    ) : (
                                         <button
                                             type="button"
-                                            title="Regenerate from name"
-                                            className="rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                            title="Edit slug"
+                                            onClick={() => setSlugEditing(true)}
+                                            className="cursor-pointer rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                                         >
-                                            <RefreshCw className="size-4" />
+                                            <Pencil className="size-4" />
                                         </button>
-                                        <button
-                                            type="button"
-                                            title="Lock slug (auto-generate from name)"
-                                            className="rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                                        >
-                                            <Lock className="size-4" />
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        title="Edit slug"
-                                        className="rounded-lg border border-sidebar-border p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                                    >
-                                        <Pencil className="size-4" />
-                                    </button>
-                                )}
+                                    )
+                                }
                             </div>
                         </div>
                         
                         {/* Category Field */}
                         <Field>
-                            <FieldLabel htmlFor="category">
+                            <FieldLabel htmlFor="productCategory">
                                 Category <span className="text-red-500">*</span>
                             </FieldLabel>
                             <SelectCategory 
@@ -193,9 +257,11 @@ export default function ProductFormCreate(){
                             </FieldLabel>
                             <Input 
                                 id="productSku" 
-                                name="productSku"
+                                name="sku"
                                 type="text" 
                                 placeholder="e.g. MCT-001" 
+                                value={formData.sku}
+                                onChange={handleChange}
                             />
                         </Field>
 
@@ -207,9 +273,11 @@ export default function ProductFormCreate(){
                                 </FieldLabel>
                                 <Input 
                                     id="productShortDescription" 
-                                    name="productShortDescription"
+                                    name="shortDescription"
                                     type="text" 
-                                    placeholder="A short summary shown on product cards" 
+                                    placeholder="A short summary shown on product cards"
+                                    value={formData.shortDescription}
+                                    onChange={handleChange} 
                                 />
                             </Field>
                         </div>
@@ -222,14 +290,17 @@ export default function ProductFormCreate(){
                                 </FieldLabel>
                                 <Textarea 
                                     id="productDescription" 
-                                    name="productDescription"
+                                    name="description"
                                     placeholder="Full product detail page description..."
+                                    value={formData.description}
+                                    onChange={handleChange}
                                 />
                             </Field>
                         </div>
                     </div>
                 </SectionCard>
 
+                {/* Product Images */}
                 <SectionCard 
                         title="Images"
                         subtitle={`Add product photos. First image is set as primary — drag thumbnails to reorder. JPG, PNG or WEBP up to ${MAX_IMAGE_SIZE_MB}MB.`}
@@ -321,6 +392,135 @@ export default function ProductFormCreate(){
                         </div>
                         )}
                 </SectionCard>
+
+                {/* Pricing */}
+                <SectionCard title="Pricing" subtitle="Prices, cost and shipping weight">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        
+                        {/* Base Price Field */}
+                        <div>
+                            <div className="flex items-end gap-2">
+                                <Field>
+                                    <FieldLabel htmlFor="productBasePrice">
+                                        Base Price <span className="text-red-500">*</span>
+                                    </FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupInput 
+                                            id="productBasePrice" 
+                                            name="basePrice"
+                                            type="number"
+                                            inputMode="decimal"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={formData.basePrice}
+                                            onChange={handleChange}
+                                        />
+                                        <InputGroupAddon>
+                                            <PhilippinePeso />
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                </Field>
+                            </div>
+                        </div>
+
+                        {/* Compare Price Field */}
+                        <div>
+                            <div className="flex items-end gap-2">
+                                <Field>
+                                    <FieldLabel htmlFor="productComparePrice">
+                                        Compare Price <span className="text-xs font-normal text-sidebar-foreground/40">(shown as strikethrough)</span>
+                                    </FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupInput 
+                                            id="productComparePrice" 
+                                            name="comparePrice"
+                                            type="number"
+                                            inputMode="decimal"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={formData.comparePrice}
+                                            onChange={handleChange}
+                                        />
+                                        <InputGroupAddon>
+                                            <PhilippinePeso />
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                </Field>
+                            </div>
+                        </div>
+
+                        {/* Cost Price Field */}
+                        <div>
+                            <div className="flex items-end gap-2">
+                                <Field>
+                                    <FieldLabel htmlFor="productCostPrice">
+                                        Cost Price <span className="text-xs font-normal text-sidebar-foreground/40">(admin-only, internal)</span>
+                                    </FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupInput 
+                                            id="productCostPrice" 
+                                            name="costPrice"
+                                            type="number"
+                                            inputMode="decimal"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={formData.costPrice}
+                                            onChange={handleChange}
+                                        />
+                                        <InputGroupAddon>
+                                            <PhilippinePeso />
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                </Field>
+                            </div>
+                        </div>
+
+                        {/* Weight Field */}
+                        <div>
+                            <div className="flex items-end gap-2">
+                                <Field>
+                                    <FieldLabel htmlFor="productWeight">
+                                        Weight <span className="text-xs font-normal text-sidebar-foreground/40">(for shipping calculation)</span>
+                                    </FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupInput 
+                                            id="productWeight" 
+                                            name="weight"
+                                            type="number"
+                                            inputMode="decimal"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={formData.weight}
+                                            onChange={handleChange}
+                                        />
+                                    </InputGroup>
+                                </Field>
+                                <Select value={formData.weightUnit} onValueChange={(value) => { 
+                                        if(!value) return
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            weightUnit: value
+                                        }))
+                                    }}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value={"kg"}>KG</SelectItem>
+                                            <SelectItem value={"g"}>G</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                </SectionCard>
+
                 <Button
                     type="button"
                     onClick={save}
