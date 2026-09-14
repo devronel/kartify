@@ -33,3 +33,11 @@ export type ProductImage = {
   isPrimary: boolean
   sortOrder: number
 }
+
+export type ProductVariant = {
+  attributeValues: ProductAttributeValue[],
+  sku: string,
+  price: number,
+  stock: number,
+  isActive: boolean
+}

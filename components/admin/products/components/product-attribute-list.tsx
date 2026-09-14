@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import apiClient, { isAxiosError } from "@/lib/api-client"
-import { ProductAttribute, ProductAttributeValue } from "@/types/product"
-import { Plus } from "lucide-react"
+import { ProductAttribute, ProductAttributeValue, ProductVariant } from "@/types/product"
+import { Boxes, Layers, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import ProductAttributeSelection from "./product-attribute-selection"
 import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
@@ -13,9 +13,13 @@ import { Spinner } from "@/components/ui/spinner"
 import { ValidationErrorResponse } from "@/types/api-error"
 import { toast } from "@/components/ui/toast"
 import { Field, FieldError } from "@/components/ui/field"
+import ProductVariantCombination from "./product-variant-combination"
 
+type ProductAttributeListProps = {
+    onVariantsChange: (productVariant: ProductVariant[]) => void
+}
 
-export default function ProductAttributeList(){
+export default function ProductAttributeList({ onVariantsChange }: ProductAttributeListProps){
 
     const [isFetchingData, setIsFetchingData] = useState<boolean>(false)
     const [isSaving, setIsSaving] = useState<boolean>(false)
@@ -28,21 +32,39 @@ export default function ProductAttributeList(){
     // Get selected attribute value
     const getSelectedAttributeValue = (attributeValue: ProductAttributeValue) => {
         setSelectedAttributeValues(prev => {
-
+            
             const updated = [...prev]
 
             const groupIndex = updated.findIndex(
                 group => group.length > 0 && group[0].productAttributeId === attributeValue.productAttributeId
             )
 
+            // No group yet -> create one
             if (groupIndex === -1) {
-                updated.push([attributeValue])
-            } else {
-                updated[groupIndex] = [
-                    ...updated[groupIndex],
-                    attributeValue
-                ]
+                return [...updated, [attributeValue]]
             }
+
+            const group = updated[groupIndex]
+
+            const valueIndex = group.findIndex(value => value.id === attributeValue.id)
+
+            // Already selected -> remove it
+            if (valueIndex !== -1) {
+
+                const newGroup = group.filter(value => value.id !== attributeValue.id)
+
+                // Remove empty group
+                if (newGroup.length === 0) {
+                    return updated.filter((_, index) => index !== groupIndex)
+                }
+
+                updated[groupIndex] = newGroup
+
+                return updated
+            }
+
+            // Not selected -> add it
+            updated[groupIndex] = [...group, attributeValue]
 
             return updated
         })
@@ -52,14 +74,23 @@ export default function ProductAttributeList(){
     const save = async () => {
         try {
             setIsSaving(true)
-            const response = await apiClient.post('/api/admin/product/attribute', { name: attribute },{
-                headers: {
-                    'Content-Type': 'application/json'
+            const response = await apiClient.post('/api/admin/product/attribute', 
+                { name: attribute },
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 }
-            })
+            )
             
             if(response.data.success){
-                getAllProductAttributeWithValue()
+
+                const payload: ProductAttribute = response.data.payload
+                
+                setProductAttributes(prev => {
+                    return [...prev, payload]
+                })
+
                 setAttribute("")
                 setErrors({})
             }
@@ -77,6 +108,18 @@ export default function ProductAttributeList(){
         } finally {
             setIsSaving(false)
         }
+    }
+
+    // Update current product attibute value
+    const updateProductAttributeValue = (productAttributeValue: ProductAttributeValue) => {
+        setProductAttributes(prev =>
+            prev.map((attribute: ProductAttribute) =>
+                attribute.id === productAttributeValue.productAttributeId ? {
+                    ...attribute,
+                    values: [...attribute.values, productAttributeValue]
+                } : attribute
+            )
+        );
     }
 
     // Get all product attributes including its values
@@ -106,7 +149,8 @@ export default function ProductAttributeList(){
                                 <ProductAttributeSelection 
                                     key={attribute.id}
                                     data={attribute}
-                                    onSelectedAttributeValue={getSelectedAttributeValue}
+                                    onAttributeValueSelect={getSelectedAttributeValue}
+                                    onProductAttributeUpdate={updateProductAttributeValue}
                                 />
                             )
                         })
@@ -141,6 +185,12 @@ export default function ProductAttributeList(){
                     Add Attribute
                 </Button>
             </div>
+
+            {/* Product Variant Combination */}
+            <ProductVariantCombination 
+                selectedAttributeValues={selectedAttributeValues}
+                onVariantChange={onVariantsChange}
+            />
         </>
     )
 

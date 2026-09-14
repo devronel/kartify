@@ -12,7 +12,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { slugify, slugifyFinal, uid } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
-import { ProductFormValues, ProductImage } from "@/types/product";
+import { ProductFormValues, ProductImage, ProductVariant } from "@/types/product";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ProductAttributeList from "./components/product-attribute-list";
@@ -42,6 +42,12 @@ export default function ProductFormCreate(){
         hasVariant: true,
         stockQuantity: 0
     });
+    const [productVariants, setProductVariants] = useState<ProductVariant[]>([])
+
+    // Handle variants 
+    const handleVariantsChange = (variants: ProductVariant[]) => {
+        setProductVariants(variants)
+    }
 
     // Selected Category
     const selectedCategories = (category: Category) => {
@@ -154,6 +160,7 @@ export default function ProductFormCreate(){
     const save = () => {
         // console.log(images)
         // console.log(formData)
+        console.log(productVariants)
     }
 
     return (
@@ -564,16 +571,18 @@ export default function ProductFormCreate(){
                             <div className="space-y-6">
                                 <div>
                                     <div className="mb-3 flex items-center gap-2">
-                                    <span className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground/60">
-                                        1
-                                    </span>
-                                    <h3 className="text-sm font-semibold text-sidebar-foreground">Attribute Selection</h3>
+                                        <span className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground/60">
+                                            1
+                                        </span>
+                                        <h3 className="text-sm font-semibold text-sidebar-foreground">Attribute Selection</h3>
                                     </div>
                                     <p className="mb-4 text-sm text-sidebar-foreground/60">
-                                    Choose the attributes and values your variants are made of.
+                                        Choose the attributes and values your variants are made of.
                                     </p>
                                 </div>
-                                <ProductAttributeList />
+                                <ProductAttributeList 
+                                    onVariantsChange={handleVariantsChange}
+                                />
                             </div>
                         )
                     }

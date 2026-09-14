@@ -12,10 +12,11 @@ import { useState } from "react"
 
 type ProductAttributeSelectionProps = {
     data: ProductAttribute,
-    onSelectedAttributeValue: (attributeValues: ProductAttributeValue) => void
+    onAttributeValueSelect: (attributeValues: ProductAttributeValue) => void,
+    onProductAttributeUpdate: (attributeValues: ProductAttributeValue) => void
 }
 
-export default function ProductAttributeSelection({ data, onSelectedAttributeValue } : ProductAttributeSelectionProps){
+export default function ProductAttributeSelection({ data, onAttributeValueSelect, onProductAttributeUpdate } : ProductAttributeSelectionProps){
 
     const [isSaving, setIsSaving] = useState<boolean>(false)
     const [expanded, setExpanded] = useState<boolean>(true)
@@ -30,6 +31,7 @@ export default function ProductAttributeSelection({ data, onSelectedAttributeVal
         }
     }
 
+    // Save new product attribute value
     const save = async () => {
         try {
             setIsSaving(true)
@@ -44,6 +46,11 @@ export default function ProductAttributeSelection({ data, onSelectedAttributeVal
             })
 
             if(response.data.success){
+
+                const attributeValue: ProductAttributeValue = response.data.payload
+
+                onProductAttributeUpdate(attributeValue)
+
                 setAttributeValue("")
                 setErrors({})
             }
@@ -98,7 +105,7 @@ export default function ProductAttributeSelection({ data, onSelectedAttributeVal
                                             <input
                                                 type="checkbox"
                                                 className="size-3.5 shrink-0 accent-sidebar-primary"
-                                                onChange={() => onSelectedAttributeValue(value)}
+                                                onChange={() => onAttributeValueSelect(value)}
                                             />
                                             { value.productAttributeValueName }
                                         </label>

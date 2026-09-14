@@ -15,11 +15,17 @@ export const slugifyFinal = (value: string) => slugify(value).replace(/^-|-$/g, 
 
 export const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
 
-function cartesian<T>(groups: T[][]): T[][] {
+export const cartesian = <T>(groups: T[][]): T[][] => {
   return groups.reduce<T[][]>(
-    (acc, group) =>
-      acc.length === 0 ? group.map((item) => [item]) : acc.flatMap((combo) => group.map((item) => [...combo, item])),
-    []
+    (result, group) => {
+        return result.flatMap(existing =>
+            group.map(value => [
+                ...existing,
+                value
+            ])
+        )
+    },
+    [[]]
   )
 }
 
