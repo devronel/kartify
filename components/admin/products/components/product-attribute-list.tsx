@@ -16,10 +16,11 @@ import { Field, FieldError } from "@/components/ui/field"
 import ProductVariantCombination from "./product-variant-combination"
 
 type ProductAttributeListProps = {
-    onVariantsChange: (productVariant: ProductVariant[]) => void
+    onVariantsChange: (productVariant: ProductVariant[]) => void,
+    variantErrors: Record<string, string>
 }
 
-export default function ProductAttributeList({ onVariantsChange }: ProductAttributeListProps){
+export default function ProductAttributeList({ onVariantsChange, variantErrors }: ProductAttributeListProps){
 
     const [isFetchingData, setIsFetchingData] = useState<boolean>(false)
     const [isSaving, setIsSaving] = useState<boolean>(false)
@@ -86,9 +87,9 @@ export default function ProductAttributeList({ onVariantsChange }: ProductAttrib
             if(response.data.success){
 
                 const payload: ProductAttribute = response.data.payload
-                
+
                 setProductAttributes(prev => {
-                    return [...prev, payload]
+                    return [...prev, { ...payload, values: [] }]
                 })
 
                 setAttribute("")
@@ -190,6 +191,7 @@ export default function ProductAttributeList({ onVariantsChange }: ProductAttrib
             <ProductVariantCombination 
                 selectedAttributeValues={selectedAttributeValues}
                 onVariantChange={onVariantsChange}
+                variantErrors={variantErrors}
             />
         </>
     )

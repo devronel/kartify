@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cartesian } from "@/lib/helper"
@@ -8,12 +9,14 @@ import { useEffect, useMemo, useState } from "react"
 
 type ProductVariantCombinationProps = {
     selectedAttributeValues: ProductAttributeValue[][],
-    onVariantChange: (productVariant: ProductVariant[]) => void
+    onVariantChange: (productVariant: ProductVariant[]) => void,
+    variantErrors: Record<string, string>
 }
 
-export default function ProductVariantCombination({ selectedAttributeValues, onVariantChange } : ProductVariantCombinationProps){
+export default function ProductVariantCombination({ selectedAttributeValues, onVariantChange, variantErrors } : ProductVariantCombinationProps){
 
     const [productVariants, setProductVariants] = useState<ProductVariant[]>([])
+    const [stockQuantity, setStockQuantity] = useState<number>(0)
 
     // Generate variant combination
     const variants: ProductAttributeValue[][] = useMemo(() => {
@@ -42,6 +45,20 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
         )
     }
 
+    // Set stock for all
+    const setStockForAll = () => {
+        if(stockQuantity <= 0) return
+        
+        setProductVariants(prev =>
+            prev.map(variant => ({
+                ...variant,
+                stockQuantity: stockQuantity
+            }))
+        );
+
+        setStockQuantity(0)
+    }
+
     // Create state for every new variant combination and preserve if theres existing
     useEffect(() => {
         if(variants.length > 0 && variants[0].length > 0){
@@ -58,8 +75,10 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                     return existingVariant ?? {
                         attributeValues,
                         sku: "",
-                        price: 0,
-                        stock: 0,
+                        price: "",
+                        comparePrice: "",
+                        costPrice: "",
+                        stockQuantity: 0,
                         isActive: true
                     }
                 })
@@ -96,15 +115,11 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                 step="1"
                                 placeholder="Stock"
                                 title="Set stock for all variants"
+                                value={stockQuantity}
+                                onChange={(e) => setStockQuantity(Number(e.target.value))}
                             />
-                            <Button type="button" variant="outline" size="sm">
+                            <Button onClick={setStockForAll} type="button" variant="outline" size="sm">
                                 Set stock for all
-                            </Button>
-                            <Button type="button" variant="ghost" size="sm">
-                                Activate all
-                            </Button>
-                            <Button type="button" variant="ghost" size="sm">
-                                Deactivate all
                             </Button>
                         </div>
                     )
@@ -129,6 +144,12 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                         </th>
                                         <th className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
                                             Price Override
+                                        </th>
+                                        <th className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
+                                            Compare Price
+                                        </th>
+                                        <th className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
+                                            Cost Price
                                         </th>
                                         <th className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
                                             Stock <span className="text-red-500">*</span>
@@ -167,6 +188,7 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                                             type="text"
                                                             placeholder="SKU"
                                                             name='sku'
+                                                            aria-invalid={variantErrors[`variants[${index}].sku`] ? true : false}
                                                             value={variant.sku}
                                                             onChange={event => handleChange(event, index)}
                                                         />
@@ -177,9 +199,36 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                                             inputMode="decimal"
                                                             min="0"
                                                             step="0.01"
-                                                            placeholder="$ base"
+                                                            placeholder="₱ base"
                                                             name='price'
+                                                            aria-invalid={variantErrors[`variants[${index}].price`] ? true : false}
                                                             value={variant.price}
+                                                            onChange={event => handleChange(event, index)}
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2.5 pr-4">
+                                                        <Input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            min="0"
+                                                            step="0.01"
+                                                            placeholder="₱ compare price"
+                                                            name='price'
+                                                            aria-invalid={variantErrors[`variants[${index}].comparePrice`] ? true : false}
+                                                            value={variant.comparePrice}
+                                                            onChange={event => handleChange(event, index)}
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2.5 pr-4">
+                                                        <Input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            min="0"
+                                                            step="0.01"
+                                                            placeholder="₱ cost price"
+                                                            name='price'
+                                                            aria-invalid={variantErrors[`variants[${index}].costPrice`] ? true : false}
+                                                            value={variant.costPrice}
                                                             onChange={event => handleChange(event, index)}
                                                         />
                                                     </td>
@@ -191,7 +240,8 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                                             step="1"
                                                             placeholder="0"
                                                             name='stock'
-                                                            value={variant.stock}
+                                                            aria-invalid={variantErrors[`variants[${index}].stockQuantity`] ? true : false}
+                                                            value={variant.stockQuantity}
                                                             onChange={event => handleChange(event, index)}
                                                         />
                                                     </td>
@@ -211,15 +261,18 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                         </div>
                     </>
                 ) : (
-                    <div className="rounded-xl border border-dashed border-sidebar-border p-10 text-center">
-                        <Boxes className="mx-auto size-8 text-sidebar-foreground/30" />
-                        <p className="mt-3 text-sm font-medium text-sidebar-foreground">
-                            No variants generated yet
-                        </p>
-                        <p className="mx-auto mt-1 max-w-sm text-xs text-sidebar-foreground/50">
-                            Check at least one attribute and select its values above to auto-generate all size/color combinations.
-                        </p>
-                    </div>
+                    <>
+                        <div className={`${variantErrors.variants ? 'border-red-500' : 'border-sidebar-border'} rounded-xl border border-dashed p-10 text-center`}>
+                            <Boxes className="mx-auto size-8 text-sidebar-foreground/30" />
+                            <p className="mt-3 text-sm font-medium text-sidebar-foreground">
+                                No variants generated yet
+                            </p>
+                            <p className="mx-auto mt-1 max-w-sm text-xs text-sidebar-foreground/50">
+                                Check at least one attribute and select its values above to auto-generate all size/color combinations.
+                            </p>
+                        </div>
+                        { variantErrors.variants && (<FieldError className="mt-3">{variantErrors.variants}</FieldError>) }
+                    </>
                 )
             }
         </div>

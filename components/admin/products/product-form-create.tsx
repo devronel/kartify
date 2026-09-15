@@ -1,6 +1,6 @@
 "use client"
 
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import SectionCard from "../shared/SectionCard";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
@@ -16,6 +16,10 @@ import { ProductFormValues, ProductImage, ProductVariant } from "@/types/product
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ProductAttributeList from "./components/product-attribute-list";
+import apiClient, { isAxiosError } from "@/lib/api-client";
+import { ValidationErrorResponse } from "@/types/api-error";
+import { toast } from "@/components/ui/toast";
+import { Spinner } from "@/components/ui/spinner";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_IMAGE_SIZE_MB = 5
@@ -25,6 +29,8 @@ export default function ProductFormCreate(){
     const [dragOver, setDragOver] = useState<boolean>(false)
     const [dragIndex, setDragIndex] = useState<number | null>(null)
     const [imagesError, setImagesError] = useState<string>("")
+    const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
+    const [errors, setErrors] = useState<Record<string, string>>({})
     const [slugEditing, setSlugEditing] = useState<boolean>(false)
     const [images, setImages] = useState<ProductImage[]>([])
     const [formData, setFormData] = useState<ProductFormValues>({
@@ -34,13 +40,14 @@ export default function ProductFormCreate(){
         sku: '',
         shortDescription: '',
         description: '',
-        basePrice: 0.00,
-        comparePrice: 0.00,
-        costPrice: 0.00,
+        price: '',
+        comparePrice: '',
+        costPrice: '',
         weight: 0,
-        weightUnit: 'kg',
-        hasVariant: true,
-        stockQuantity: 0
+        hasVariant: false,
+        stockQuantity: 0,
+        isActive: true,
+        isFeatured: false
     });
     const [productVariants, setProductVariants] = useState<ProductVariant[]>([])
 
@@ -157,10 +164,96 @@ export default function ProductFormCreate(){
     }
 
     // Save Data
-    const save = () => {
-        // console.log(images)
-        // console.log(formData)
-        console.log(productVariants)
+    const save = async () => {
+        try {
+
+            // Organize the payload data
+            const data = {
+                ...formData,
+                files: images.map(image => ({
+                    file: image.file,
+                    isPrimary: image.isPrimary
+                })),
+                variants: productVariants
+            }
+            
+            // Create form data object
+            const payload = new FormData()
+
+            // Add product info., pricing and images in FormData()
+            Object.entries(data).forEach(([key, value]) => {
+                if (value === null || value === undefined) return;
+
+                if(key === 'files'){
+                    (value as ProductImage[]).forEach((image, index) => {
+                        payload.append(`files[${index}].file`, image.file);
+                        payload.append(`files[${index}].isPrimary`, image.isPrimary.toString());
+                    })
+                }else if(key === 'variants'){
+                    (value as ProductVariant[]).forEach((variant, index) => {
+                        variant.attributeValues.forEach((attributeValue, idx) => {
+                            payload.append(`variants[${index}].attributeValueIds[${idx}]`, attributeValue.id.toString());
+                        })
+                        payload.append(`variants[${index}].sku`, variant.sku);
+                        payload.append(`variants[${index}].price`, variant.price);
+                        payload.append(`variants[${index}].comparePrice`, variant.comparePrice);
+                        payload.append(`variants[${index}].costPrice`, variant.costPrice);
+                        payload.append(`variants[${index}].isActive`, variant.isActive.toString());
+                        payload.append(`variants[${index}].stockQuantity`, variant.stockQuantity.toString());
+                    })
+                }else{
+                    payload.append(key, String(value));
+                }
+
+            });
+
+            setIsButtonLoading(true)
+
+            const response = await apiClient.post('/api/admin/product', payload)
+
+            if(response.data.success){
+
+                toast.add({
+                    type: "success",
+                    description: "New Product Created Successfully.",
+                })
+
+                // Reset the state fields
+                setFormData({
+                    name: '',
+                    slug: '',
+                    categoryId: null,
+                    sku: '',
+                    shortDescription: '',
+                    description: '',
+                    price: '',
+                    comparePrice: '',
+                    costPrice: '',
+                    weight: 0,
+                    hasVariant: false,
+                    stockQuantity: 0,
+                    isActive: true,
+                    isFeatured: false
+                })
+                setProductVariants([])
+                setImages([])
+                setErrors({})
+            }
+
+        } catch (error: any) {
+            if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
+                setErrors(error.response.data.errors)
+                return
+            }
+
+            toast.add({
+                type: 'Error',
+                description: "Something went wrong."
+            })
+        } finally {
+            setIsButtonLoading(false)
+        }
+
     }
 
     return (
@@ -182,9 +275,11 @@ export default function ProductFormCreate(){
                                     name="name"
                                     type="text" 
                                     placeholder="e.g. Minimal Cotton T-Shirt" 
+                                    aria-invalid={errors.name ? true : false}
                                     value={formData.name}
                                     onChange={handleChange}
                                 />
+                                { errors.name && (<FieldError>{errors.name}</FieldError>) }
                             </Field>
                         </div>
 
@@ -201,6 +296,7 @@ export default function ProductFormCreate(){
                                             name="slug"
                                             type="text"
                                             placeholder="auto-generated-from-name"
+                                            aria-invalid={errors.slug ? true : false}
                                             onBlur={handleSlugBlur}
                                             readOnly={!slugEditing}
                                             disabled={!slugEditing}
@@ -244,32 +340,40 @@ export default function ProductFormCreate(){
                                     )
                                 }
                             </div>
+                            { errors.slug && (<FieldError className="mt-3">{errors.slug}</FieldError>) }
                         </div>
                         
                         {/* Category Field */}
-                        <Field>
-                            <FieldLabel htmlFor="productCategory">
-                                Category <span className="text-red-500">*</span>
-                            </FieldLabel>
-                            <SelectCategory 
-                                onSelected={selectedCategories}
-                            />
-                        </Field>
+                        <div className={`${formData.hasVariant ? 'md:col-span-2' : '' }`}>
+                            <Field>
+                                <FieldLabel htmlFor="productCategory">
+                                    Category <span className="text-red-500">*</span>
+                                </FieldLabel>
+                                <SelectCategory 
+                                    onSelected={selectedCategories}
+                                />
+                                { errors.categoryId && (<FieldError>{errors.categoryId}</FieldError>) }
+                            </Field>
+                        </div>
 
                         {/* SKU Field */}
-                        <Field>
-                            <FieldLabel htmlFor="productSku">
-                                SKU <span className="text-xs font-normal text-sidebar-foreground/40">(base SKU if no variants)</span>
-                            </FieldLabel>
-                            <Input 
-                                id="productSku" 
-                                name="sku"
-                                type="text" 
-                                placeholder="e.g. MCT-001" 
-                                value={formData.sku}
-                                onChange={handleChange}
-                            />
-                        </Field>
+                        {
+                            !formData.hasVariant ? (
+                                <Field>
+                                    <FieldLabel htmlFor="productSku">
+                                        SKU <span className="text-xs font-normal text-sidebar-foreground/40">(base SKU if no variants)</span>
+                                    </FieldLabel>
+                                    <Input 
+                                        id="productSku" 
+                                        name="sku"
+                                        type="text" 
+                                        placeholder="e.g. MCT-001" 
+                                        value={formData.sku}
+                                        onChange={handleChange}
+                                    />
+                                </Field>
+                            ) : null
+                        }
 
                         {/* Short Description Field */}
                         <div className="md:col-span-2">
@@ -413,19 +517,21 @@ export default function ProductFormCreate(){
                                     <InputGroup>
                                         <InputGroupInput 
                                             id="productBasePrice" 
-                                            name="basePrice"
+                                            name="price"
                                             type="number"
                                             inputMode="decimal"
                                             min="0"
                                             step="0.01"
                                             placeholder="0.00"
-                                            value={formData.basePrice}
+                                            aria-invalid={errors.price ? true : false}
+                                            value={formData.price}
                                             onChange={handleChange}
                                         />
                                         <InputGroupAddon>
                                             <PhilippinePeso />
                                         </InputGroupAddon>
                                     </InputGroup>
+                                    { errors.price && (<FieldError>{errors.price}</FieldError>) }
                                 </Field>
                             </div>
                         </div>
@@ -505,23 +611,6 @@ export default function ProductFormCreate(){
                                         />
                                     </InputGroup>
                                 </Field>
-                                <Select value={formData.weightUnit} onValueChange={(value) => { 
-                                        if(!value) return
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            weightUnit: value
-                                        }))
-                                    }}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem value={"kg"}>KG</SelectItem>
-                                            <SelectItem value={"g"}>G</SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </div>
                     </div>
@@ -542,7 +631,15 @@ export default function ProductFormCreate(){
                             <Switch 
                                 id="hasVariant" 
                                 checked={formData.hasVariant} 
-                                onCheckedChange={(value) => setFormData(prev => ({ ...prev, hasVariant: value }))} 
+                                onCheckedChange={(value) => {
+                                    setFormData(prev => ({
+                                     ...prev, hasVariant: value 
+                                    }))
+
+                                    if(!value){
+                                        setProductVariants([])
+                                    }
+                                }} 
                             />
                         </div>
                     }
@@ -582,6 +679,7 @@ export default function ProductFormCreate(){
                                 </div>
                                 <ProductAttributeList 
                                     onVariantsChange={handleVariantsChange}
+                                    variantErrors={errors}
                                 />
                             </div>
                         )
@@ -590,13 +688,19 @@ export default function ProductFormCreate(){
 
                 </SectionCard>
 
-                <Button
-                    type="button"
-                    onClick={save}
-                >
-                    <Send className="size-4" />
-                    Publish Product
-                </Button>
+                <div className="flex items-center justify-end">
+                    <Button
+                        type="button"
+                        disabled={isButtonLoading}
+                        onClick={save}
+                        className="cursor-pointer"
+                    >
+                        {
+                            isButtonLoading ? <Spinner className="size-4" /> : <Send className="size-4" />
+                        }
+                        Publish Product
+                    </Button>
+                </div>
             </div>
         </>
     )

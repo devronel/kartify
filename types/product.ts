@@ -5,13 +5,14 @@ export type ProductFormValues = {
     sku: string,
     shortDescription: string,
     description: string,
-    basePrice: number,
-    comparePrice: number,
-    costPrice: number,
+    price: string,
+    comparePrice: string,
+    costPrice: string,
     weight: number,
-    weightUnit: 'kg' | 'g',
     hasVariant: boolean,
-    stockQuantity: number
+    stockQuantity: number,
+    isActive: boolean,
+    isFeatured: boolean
 }
 
 export type ProductAttribute = {
@@ -37,7 +38,9 @@ export type ProductImage = {
 export type ProductVariant = {
   attributeValues: ProductAttributeValue[],
   sku: string,
-  price: number,
-  stock: number,
+  price: string,
+  comparePrice: string,
+  costPrice: string,
+  stockQuantity: number,
   isActive: boolean
 }
