@@ -1,39 +1,18 @@
 "use client"
 
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import apiClient from "@/lib/api-client"
 import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
 import ErrorFetchingIndicator from "@/components/shared/error-fetching-indicator"
 import CustomPagination from "@/components/shared/pagination"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import apiClient from "@/lib/api-client"
-import { ChevronDown, MoreHorizontal, Search } from "lucide-react"
-import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-
-type Product = {
-    id: number,
-    category: string,
-    name: string,
-    sku: string,
-    price: number,
-    comparePrice: number,
-    costPrice: number,
-    hasVariants: boolean,
-    stockQuantity: number,
-    weight: number,
-    isActive: boolean,
-    isFeatured: boolean,
-    primaryImage: string
-}
-
-type Paginate<T> = {
-    payload: T[],
-    currentPage: number,
-    hasNext: boolean,
-    hasPrevious: boolean,
-    pageSize: number,
-    totalItems: number,
-    totalPages: number
-}
+import { ChevronDown, MoreHorizontalIcon, Search } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { Paginate } from "@/types/paginate"
+import { Product } from "@/types/product"
+import useDebounce from "@/hooks/use-debounce"
 
 const statusStyles: Record<string, string> = {
   true: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
@@ -42,33 +21,64 @@ const statusStyles: Record<string, string> = {
 
 export default function ProductList(){
 
+    const router = useRouter();
     const searchParams = useSearchParams();
-    const currentPage = Number(searchParams.get('page')) || 1;
 
-    const [products, setProducts] = useState<Paginate<Product> | null>(null)
-    const [isFetchingData, setIsFetchingData] = useState<boolean>(false)
-    const [hasError, setHasError] = useState<string | null>(null)
+    const currentPage = Number(searchParams.get("page")) || 1;
+    const currentSearch = searchParams.get("search") || "";
 
+    const [search, setSearch] = useState<string>(currentSearch);
+    const searchQuery = useDebounce(search, 800);
+
+    const [products, setProducts] = useState<Paginate<Product> | null>(null);
+    const [isFetchingData, setIsFetchingData] = useState<boolean>(false);
+    const [hasError, setHasError] = useState<string | null>(null);
+
+    // Search product
+    const searchProduct = (q: string) => {
+        setSearch(q);
+    };
+
+    // Get all products
     const getProducts = async () => {
         try {
-            setIsFetchingData(true)
-            setHasError(null)
-            const response = await apiClient(`/api/admin/product?page=${currentPage}`)
-            setProducts(response.data)
-        } catch (error: any) {
-            setHasError(error.message)
-        } finally {
-            setIsFetchingData(false)
-        }
-    }
+            setIsFetchingData(true);
+            setHasError(null);
 
+            const params = new URLSearchParams(searchParams.toString());
+            const response = await apiClient(`/api/admin/product?${params.toString()}`);
+
+            setProducts(response.data);
+        } catch (error: any) {
+            setHasError(error.message);
+        } finally {
+            setIsFetchingData(false);
+        }
+    };
+
+    // Update URL when search changes
     useEffect(() => {
-        getProducts()
-    }, [currentPage])
+        const params = new URLSearchParams(searchParams.toString());
+
+        params.delete("page");
+
+        if (searchQuery.trim()) {
+            params.set("search", searchQuery);
+        } else {
+            params.delete("search");
+        }
+
+        router.replace(`?${params.toString()}`);
+    }, [searchQuery]);
+
+    // Get products when URL changes
+    useEffect(() => {
+        getProducts();
+    }, [searchParams]);
 
     return (
         <>
-            <div className="rounded-xl border border-sidebar-border bg-sidebar overflow-hidden">
+            <div className="rounded-xl border border-sidebar-border bg-sidebar">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-sidebar-border">
                     <div className="relative w-full sm:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sidebar-foreground/40" />
@@ -76,6 +86,8 @@ export default function ProductList(){
                             type="text"
                             placeholder="Search products..."
                             className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 py-2 pl-9 pr-4 text-sm text-sidebar-foreground placeholder-sidebar-foreground/40 outline-none focus:border-sidebar-ring focus:ring-1 focus:ring-sidebar-ring transition-colors"
+                            value={search}
+                            onChange={(event) => searchProduct(event.target.value)}
                         />
                     </div>
                     <div className="flex items-center gap-2">
@@ -92,7 +104,6 @@ export default function ProductList(){
 
                 <div className="overflow-x-auto">
                     <Table>
-                        {/* <TableCaption>A list of your recent invoices.</TableCaption> */}
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Product</TableHead>
@@ -134,12 +145,23 @@ export default function ProductList(){
                                                             {product.isActive ? "Active" : "InActive"}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <button
-                                                            className="rounded-lg p-2 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                                                        >
-                                                            <MoreHorizontal className="w-4 h-4" />
-                                                        </button>
+                                                    <TableCell className="relative">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger render={
+                                                                <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
+                                                                    <MoreHorizontalIcon />
+                                                                    <span className="sr-only">Open menu</span>
+                                                                </Button>
+                                                            } />
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem className="cursor-pointer">
+                                                                    Edit
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem variant="destructive" className="cursor-pointer">
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </TableCell>
                                                 </TableRow>
                                             )
@@ -171,17 +193,20 @@ export default function ProductList(){
                 </div>
             </div>
             {
-                products ? (
-                    <div className="mt-3">
-                        <CustomPagination 
-                            currentPage={currentPage}
-                            totalPages={products?.totalPages ?? 0}
-                            visiblePages={3}
-                            hasPrevious={products.hasPrevious}
-                            hasNext={products.hasNext}
-                        />
-                    </div>
-                ) : null
+                products && (
+                    products.totalItems > products.pageSize && (
+                        <div className="mt-3">
+                            <CustomPagination 
+                                currentPage={currentPage}
+                                totalPages={products?.totalPages ?? 0}
+                                visiblePages={3}
+                                hasPrevious={products.hasPrevious}
+                                hasNext={products.hasNext}
+                                urlPath="products"
+                            />
+                        </div>
+                    )
+                )
             }
         </>
     )

@@ -7,11 +7,19 @@ type CustomPaginationProps = {
     currentPage: number,
     totalPages: number,
     visiblePages: number,
+    urlPath: string,
     hasPrevious?: boolean,
     hasNext?: boolean
 }
 
-export default function CustomPagination({ currentPage, totalPages, visiblePages, hasPrevious, hasNext }: CustomPaginationProps ){
+export default function CustomPagination({ 
+    currentPage, 
+    totalPages, 
+    visiblePages, 
+    hasPrevious, 
+    hasNext,
+    urlPath 
+}: CustomPaginationProps ){
     
     const pages = generatePagination(currentPage, totalPages, visiblePages);
     
@@ -21,7 +29,7 @@ export default function CustomPagination({ currentPage, totalPages, visiblePages
 
                 <PaginationItem>
                     <PaginationPrevious 
-                        href={`${hasPrevious ? `products?page=${currentPage - 1}` : ''}`}  
+                        href={`${hasPrevious ? `${urlPath}?page=${currentPage - 1}` : ''}`}  
                         isDisabled={!hasPrevious} 
                         className={`${!hasPrevious ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     />
@@ -40,7 +48,7 @@ export default function CustomPagination({ currentPage, totalPages, visiblePages
                         return (
                             <PaginationItem key={index}>
                                 <PaginationLink 
-                                    href={`products${page !== 1 ? `?page=${page}` : ''}`} 
+                                    href={`${urlPath}${page !== 1 ? `?page=${page}` : ''}`} 
                                     isActive={page === currentPage}
                                     isDisabled={page === currentPage} 
                                     className={`${page === currentPage ? 'cursor-not-allowed' : 'cursor-pointer'}`}
@@ -54,7 +62,7 @@ export default function CustomPagination({ currentPage, totalPages, visiblePages
 
                 <PaginationItem>
                     <PaginationNext 
-                        href={`${hasNext ? `products?page=${currentPage + 1}` : ''}`}  
+                        href={`${hasNext ? `${urlPath}?page=${currentPage + 1}` : ''}`}  
                         isDisabled={!hasNext} 
                         className={`${!hasNext ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     />

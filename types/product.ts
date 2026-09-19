@@ -44,3 +44,19 @@ export type ProductVariant = {
   stockQuantity: number,
   isActive: boolean
 }
+
+export type Product = {
+    id: number,
+    category: string,
+    name: string,
+    sku: string,
+    price: number,
+    comparePrice: number,
+    costPrice: number,
+    hasVariants: boolean,
+    stockQuantity: number,
+    weight: number,
+    isActive: boolean,
+    isFeatured: boolean,
+    primaryImage: string
+}
