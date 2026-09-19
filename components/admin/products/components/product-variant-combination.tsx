@@ -239,7 +239,7 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                                             min="0"
                                                             step="1"
                                                             placeholder="0"
-                                                            name='stock'
+                                                            name='stockQuantity'
                                                             aria-invalid={variantErrors[`variants[${index}].stockQuantity`] ? true : false}
                                                             value={variant.stockQuantity}
                                                             onChange={event => handleChange(event, index)}

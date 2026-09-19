@@ -115,3 +115,38 @@ export const generateUniqueFileName = (prefix: string) => {
   
   return `${prefix}-${timestamp}-${secureRandom}.jpg`;
 }
+
+// Generate pagination pages route
+export const generatePagination = (currentPage: number, totalPages: number, visiblePages = 3): (number | string)[] => {
+    
+    const half = Math.floor(visiblePages / 2)
+    let start = currentPage - half
+    let end = currentPage + half
+  
+    start = Math.max(1, start)
+    end = Math.min(totalPages, end)
+    
+    const pages = [];
+  
+    pages.push(1);
+    
+    if (start > 2) {
+        pages.push("...");
+    }
+    
+    for (let page = start; page <= end; page++) {
+        if (page !== 1 && page !== totalPages) {
+            pages.push(page);
+        }
+    }
+    
+    if (end < totalPages - 1) {
+        pages.push("...");
+    }
+    
+    if (totalPages > 1) {
+        pages.push(totalPages);
+    }
+  
+    return pages
+}
