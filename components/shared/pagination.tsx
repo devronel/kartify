@@ -7,7 +7,7 @@ type CustomPaginationProps = {
     currentPage: number,
     totalPages: number,
     visiblePages: number,
-    urlPath: string,
+    searchParams: string,
     hasPrevious?: boolean,
     hasNext?: boolean
 }
@@ -18,10 +18,44 @@ export default function CustomPagination({
     visiblePages, 
     hasPrevious, 
     hasNext,
-    urlPath 
+    searchParams
 }: CustomPaginationProps ){
     
     const pages = generatePagination(currentPage, totalPages, visiblePages);
+
+    const changePage = (page: number) => {
+        const params = new URLSearchParams(searchParams);
+
+        if(page <= 1){
+            params.delete("page")
+        } else {
+            params.set("page", String(page));
+        }
+
+        return `?${params.toString()}`;
+    };
+
+    const previousAndNext = (type: "previous" | "next") => {
+        
+        const params = new URLSearchParams(searchParams);
+        
+        let currentParams = null;
+
+        if(type === "previous"){
+            currentParams = Number(params.get("page")) - 1
+        }else {
+            const activePage = Number(params.get("page"));
+            currentParams = activePage <= 0 ? activePage + 2 : activePage + 1
+        }
+        
+        if(currentParams <= 1) {
+            params.delete("page")
+        }else{
+            params.set("page", String(currentParams));
+        }
+        
+        return `?${params.toString()}`;
+    }
     
     return (
         <Pagination>
@@ -29,7 +63,8 @@ export default function CustomPagination({
 
                 <PaginationItem>
                     <PaginationPrevious 
-                        href={`${hasPrevious ? `${urlPath}?page=${currentPage - 1}` : ''}`}  
+                        // href={`${hasPrevious ? `${urlPath}?page=${currentPage - 1}` : ''}`}  
+                        href={previousAndNext("previous")}
                         isDisabled={!hasPrevious} 
                         className={`${!hasPrevious ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     />
@@ -47,8 +82,8 @@ export default function CustomPagination({
 
                         return (
                             <PaginationItem key={index}>
-                                <PaginationLink 
-                                    href={`${urlPath}${page !== 1 ? `?page=${page}` : ''}`} 
+                                <PaginationLink
+                                    href={changePage(page)}
                                     isActive={page === currentPage}
                                     isDisabled={page === currentPage} 
                                     className={`${page === currentPage ? 'cursor-not-allowed' : 'cursor-pointer'}`}
@@ -62,7 +97,8 @@ export default function CustomPagination({
 
                 <PaginationItem>
                     <PaginationNext 
-                        href={`${hasNext ? `${urlPath}?page=${currentPage + 1}` : ''}`}  
+                        // href={`${hasNext ? `${urlPath}?page=${currentPage + 1}` : ''}`}
+                        href={previousAndNext("next")}
                         isDisabled={!hasNext} 
                         className={`${!hasNext ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     />

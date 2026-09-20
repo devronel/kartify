@@ -1,8 +1,8 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import apiClient from "@/lib/api-client"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
+import apiClient, { isCancel } from "@/lib/api-client"
 import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
 import ErrorFetchingIndicator from "@/components/shared/error-fetching-indicator"
 import CustomPagination from "@/components/shared/pagination"
@@ -22,59 +22,65 @@ const statusStyles: Record<string, string> = {
 export default function ProductList(){
 
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    const currentPage = Number(searchParams.get("page")) || 1;
-    const currentSearch = searchParams.get("search") || "";
+    const page = Number(searchParams.get("page")) || 1;
+    const urlSearch = searchParams.get("search") ?? "";
 
-    const [search, setSearch] = useState<string>(currentSearch);
-    const searchQuery = useDebounce(search, 800);
+    const [search, setSearch] = useState(urlSearch);
+    const debouncedSearch = useDebounce(search, 400);
 
     const [products, setProducts] = useState<Paginate<Product> | null>(null);
-    const [isFetchingData, setIsFetchingData] = useState<boolean>(false);
+    const [isFetchingData, setIsFetchingData] = useState(true);
     const [hasError, setHasError] = useState<string | null>(null);
 
-    // Search product
-    const searchProduct = (q: string) => {
-        setSearch(q);
-    };
+    // Debounced input -> URL (and reset to page 1)
+    useEffect(() => {
+        const next = debouncedSearch.trim();
+        if (next === urlSearch) return; // nothing to do (also skips mount)
+
+        const params = new URLSearchParams(searchParams.toString());
+        if (next) params.set("search", next);
+        else params.delete("search");
+        params.delete("page"); // new search => back to page 1
+
+        const queryString = params.toString();
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    }, [debouncedSearch]);
 
     // Get all products
-    const getProducts = async () => {
-        try {
-            setIsFetchingData(true);
-            setHasError(null);
+    const getProducts = useCallback(
+        async (signal?: AbortSignal) => {
+            try {
+                
+                setIsFetchingData(true);
+                setHasError(null);
 
-            const params = new URLSearchParams(searchParams.toString());
-            const response = await apiClient(`/api/admin/product?${params.toString()}`);
+                const params = new URLSearchParams({ page: String(page) });
 
-            setProducts(response.data);
-        } catch (error: any) {
-            setHasError(error.message);
-        } finally {
-            setIsFetchingData(false);
-        }
-    };
+                if (urlSearch) params.set("search", urlSearch);
 
-    // Update URL when search changes
+                const response = await apiClient(`/api/admin/product?${params}`, { signal });
+                
+                setProducts(response.data);
+
+            } catch (err: any) {
+                if (isCancel(err)) return;
+                setHasError(err.message);
+            } finally {
+                if (!signal?.aborted) setIsFetchingData(false);
+            }
+        },
+        [page, urlSearch]
+    );
+
+     // URL -> data
     useEffect(() => {
-        const params = new URLSearchParams(searchParams.toString());
-
-        params.delete("page");
-
-        if (searchQuery.trim()) {
-            params.set("search", searchQuery);
-        } else {
-            params.delete("search");
-        }
-
-        router.replace(`?${params.toString()}`);
-    }, [searchQuery]);
-
-    // Get products when URL changes
-    useEffect(() => {
-        getProducts();
-    }, [searchParams]);
+        const controller = new AbortController();
+        getProducts(controller.signal);
+        return () => controller.abort();
+    }, [getProducts]);
 
     return (
         <>
@@ -87,7 +93,7 @@ export default function ProductList(){
                             placeholder="Search products..."
                             className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 py-2 pl-9 pr-4 text-sm text-sidebar-foreground placeholder-sidebar-foreground/40 outline-none focus:border-sidebar-ring focus:ring-1 focus:ring-sidebar-ring transition-colors"
                             value={search}
-                            onChange={(event) => searchProduct(event.target.value)}
+                            onChange={(event) => setSearch(event.target.value)}
                         />
                     </div>
                     <div className="flex items-center gap-2">
@@ -197,12 +203,12 @@ export default function ProductList(){
                     products.totalItems > products.pageSize && (
                         <div className="mt-3">
                             <CustomPagination 
-                                currentPage={currentPage}
+                                currentPage={page}
                                 totalPages={products?.totalPages ?? 0}
                                 visiblePages={3}
                                 hasPrevious={products.hasPrevious}
                                 hasNext={products.hasNext}
-                                urlPath="products"
+                                searchParams={searchParams.toString()}
                             />
                         </div>
                     )

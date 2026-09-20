@@ -41,4 +41,8 @@ export function isAxiosError<T = unknown>( error: unknown ): error is AxiosError
   return axios.isAxiosError(error);
 }
 
+export function isCancel(error: unknown){
+  return axios.isCancel(error)
+}
+
 export default apiClient;
