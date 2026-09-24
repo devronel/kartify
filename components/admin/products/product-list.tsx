@@ -7,12 +7,13 @@ import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
 import ErrorFetchingIndicator from "@/components/shared/error-fetching-indicator"
 import CustomPagination from "@/components/shared/pagination"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronDown, MoreHorizontalIcon, Search } from "lucide-react"
+import { ArrowLeft, ChevronDown, MoreHorizontalIcon, Search } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Paginate } from "@/types/paginate"
 import { Product } from "@/types/product"
 import useDebounce from "@/hooks/use-debounce"
+import Link from "next/link"
 
 const statusStyles: Record<string, string> = {
   true: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
@@ -124,54 +125,66 @@ export default function ProductList(){
                             {
                                 !isFetchingData ? (
                                     !hasError ? (
-                                        products?.payload.map(product => {
-                                            return (
-                                                <TableRow key={product.id}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
-                                                                {
-                                                                    <img src={product.primaryImage} alt="" width={24} height={24} className="object-contain" />
-                                                                }
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium text-sidebar-foreground">{product.name}</p>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>{product.category}</TableCell>
-                                                    <TableCell>&#8369;{product.price}</TableCell>
-                                                    <TableCell>
-                                                        <span className={`text-sm ${product.stockQuantity === 0 ? "text-red-500" : "text-sidebar-foreground/70"}`}>
-                                                            {product.stockQuantity === 0 ? "Out of stock" : product.stockQuantity}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[product.isActive.toString()]}`}>
-                                                            {product.isActive ? "Active" : "InActive"}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="relative">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger render={
-                                                                <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
-                                                                    <MoreHorizontalIcon />
-                                                                    <span className="sr-only">Open menu</span>
-                                                                </Button>
-                                                            } />
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem className="cursor-pointer">
-                                                                    Edit
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem variant="destructive" className="cursor-pointer">
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
+                                        products ? (
+                                            products?.payload.length > 0 ? (
+                                                products?.payload.map(product => {
+                                                    return (
+                                                        <TableRow key={product.id}>
+                                                            <TableCell>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
+                                                                        {
+                                                                            <img src={product.primaryImage} alt="" width={24} height={24} className="object-contain" />
+                                                                        }
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-medium text-sidebar-foreground">{product.name}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell>{product.category}</TableCell>
+                                                            <TableCell>&#8369;{product.price}</TableCell>
+                                                            <TableCell>
+                                                                <span className={`text-sm ${product.stockQuantity === 0 ? "text-red-500" : "text-sidebar-foreground/70"}`}>
+                                                                    {product.stockQuantity === 0 ? "Out of stock" : product.stockQuantity}
+                                                                </span>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[product.isActive.toString()]}`}>
+                                                                    {product.isActive ? "Active" : "InActive"}
+                                                                </span>
+                                                            </TableCell>
+                                                            <TableCell className="relative">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger render={
+                                                                        <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
+                                                                            <MoreHorizontalIcon />
+                                                                            <span className="sr-only">Open menu</span>
+                                                                        </Button>
+                                                                    } />
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuItem className="cursor-pointer">
+                                                                            <Link href={`/admin/products/update/${product.id}`} className="w-full">
+                                                                                Edit
+                                                                            </Link>
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem variant="destructive" className="cursor-pointer">
+                                                                            Delete
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )
+                                                })
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} className="text-center">
+                                                        No Products found
                                                     </TableCell>
                                                 </TableRow>
                                             )
-                                        })
+                                        ) : null
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={6}>
