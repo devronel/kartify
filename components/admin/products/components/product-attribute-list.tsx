@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import apiClient, { isAxiosError } from "@/lib/api-client"
-import { ProductAttribute, ProductAttributeValue, ProductVariant } from "@/types/product"
+import { ProductAttribute, ProductAttributeValue, ProductUpdateVariant, ProductVariant } from "@/types/product"
 import { Boxes, Layers, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import ProductAttributeSelection from "./product-attribute-selection"
@@ -17,10 +17,12 @@ import ProductVariantCombination from "./product-variant-combination"
 
 type ProductAttributeListProps = {
     onVariantsChange: (productVariant: ProductVariant[]) => void,
+    existingVariants: ProductVariant[] | [],
+    existingVariantAttributes: ProductAttribute[] | [],
     variantErrors: Record<string, string>
 }
 
-export default function ProductAttributeList({ onVariantsChange, variantErrors }: ProductAttributeListProps){
+export default function ProductAttributeList({ onVariantsChange, existingVariants, existingVariantAttributes, variantErrors }: ProductAttributeListProps){
 
     const [isFetchingData, setIsFetchingData] = useState<boolean>(false)
     const [isSaving, setIsSaving] = useState<boolean>(false)
@@ -140,6 +142,24 @@ export default function ProductAttributeList({ onVariantsChange, variantErrors }
         getAllProductAttributeWithValue()
     }, [])
 
+
+    // Get existing variant attribute value and group it by attribute
+    useEffect(() => {
+
+        if(existingVariantAttributes.length > 0) {
+
+            const attributeValues = existingVariantAttributes.flatMap(variant => variant.values)
+
+            const groupValuesByAttribute = Object.groupBy(attributeValues, (value) => value.productAttributeId);
+            
+            const productAttributeValues = Object.values(groupValuesByAttribute) as ProductAttributeValue[][];
+
+            setSelectedAttributeValues(productAttributeValues)
+        }
+
+    }, [])
+
+
     return (
         <>
             {
@@ -150,6 +170,7 @@ export default function ProductAttributeList({ onVariantsChange, variantErrors }
                                 <ProductAttributeSelection 
                                     key={attribute.id}
                                     data={attribute}
+                                    selectedAttributeValues={selectedAttributeValues}
                                     onAttributeValueSelect={getSelectedAttributeValue}
                                     onProductAttributeUpdate={updateProductAttributeValue}
                                 />
@@ -192,6 +213,7 @@ export default function ProductAttributeList({ onVariantsChange, variantErrors }
                 selectedAttributeValues={selectedAttributeValues}
                 onVariantChange={onVariantsChange}
                 variantErrors={variantErrors}
+                existingVariants={existingVariants}
             />
         </>
     )

@@ -1,7 +1,3 @@
-import HeroBanner from "@/components/home/HeroBanner";
-import CategoryGrid from "@/components/home/CategoryGrid";
-import NewArrivals from "@/components/home/NewArrivals";
-
 export const metadata = {
   title: "Kartify - Shop the Best Deals Online",
   description:
@@ -11,9 +7,9 @@ export const metadata = {
 export default function Home() {
   return (
     <main>
-      <HeroBanner />
+      {/* <HeroBanner />
       <CategoryGrid />
-      <NewArrivals />
+      <NewArrivals /> */}
     </main>
   );
 }

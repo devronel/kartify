@@ -12,8 +12,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { slugify, slugifyFinal, uid } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
-import { ProductFormValues, ProductImage, ProductVariant } from "@/types/product";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProductFile, ProductFormValues, ProductVariant } from "@/types/product";
 import { Switch } from "@/components/ui/switch";
 import ProductAttributeList from "./components/product-attribute-list";
 import apiClient, { isAxiosError } from "@/lib/api-client";
@@ -28,11 +27,10 @@ export default function ProductFormCreate(){
 
     const [dragOver, setDragOver] = useState<boolean>(false)
     const [dragIndex, setDragIndex] = useState<number | null>(null)
-    const [imagesError, setImagesError] = useState<string>("")
+    const [imagesError, setImagesError] = useState<string | null>(null)
     const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [slugEditing, setSlugEditing] = useState<boolean>(false)
-    const [images, setImages] = useState<ProductImage[]>([])
     const [formData, setFormData] = useState<ProductFormValues>({
         name: '',
         slug: '',
@@ -47,14 +45,22 @@ export default function ProductFormCreate(){
         hasVariant: false,
         stockQuantity: 0,
         isActive: true,
-        isFeatured: false
+        isFeatured: false,
+        files: [],
+        variants: []
     });
-    const [productVariants, setProductVariants] = useState<ProductVariant[]>([])
+
 
     // Handle variants 
     const handleVariantsChange = (variants: ProductVariant[]) => {
-        setProductVariants(variants)
+
+        setFormData(prev => ({
+            ...prev,
+            variants: variants
+        }))
+
     }
+
 
     // Selected Category
     const selectedCategories = (category: Category) => {
@@ -65,6 +71,7 @@ export default function ProductFormCreate(){
             }))
         }
     }
+
 
     // Handles input and textarea changes
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -87,6 +94,7 @@ export default function ProductFormCreate(){
         })
     };
 
+
     // Add images
     const addImageFiles = (files: FileList | File[]) => {
         const list = Array.from(files)
@@ -101,50 +109,112 @@ export default function ProductFormCreate(){
         setImagesError(messages.join(" "))
     
         if (ok.length === 0) return
-    
-        setImages((prev) => {
-            const added = ok.map<ProductImage>((file) => ({
-                id: uid(),
-                file,
+
+        setFormData(prev => {
+
+            const files = [...prev.files]
+
+            const added = ok.map<ProductFile>((file) => ({
+                uniqueId: uid(),
+                file: file,
                 preview: URL.createObjectURL(file),
                 isPrimary: false,
-                sortOrder: prev.length,
+                sortOrder: files.length,
             }))
-    
-            if (added.length > 0 && !prev.some((image) => image.isPrimary)) {
+
+            if (added.length > 0 && !files.some((file) => file.isPrimary)) {
                 added[0].isPrimary = true
             }
-    
-            return [...prev, ...added].map((image, index) => ({ ...image, sortOrder: index }))
-    
+
+            const updated = [...prev.files, ...added].map((image, index) => ({ ...image, sortOrder: index }))
+
+            return {
+                ...prev,
+                files: updated
+            }
+
         })
+
     }
 
     // Re-Order image position
     const reorderImage = (targetIndex: number) => {
+        
         if (dragIndex === null || dragIndex === targetIndex) {
             setDragIndex(null)
             return
         }
 
-        setImages((prev) => {
-            const next = [...prev]
+        setFormData(prev => {
+
+            const next = [...prev.files]
+            
             const [moved] = next.splice(dragIndex, 1)
+            
             next.splice(targetIndex, 0, moved)
-            return next.map((img, index) => ({ ...img, sortOrder: index }))
+
+            const updated = next.map((img, index) => ({ ...img, sortOrder: index }))
+
+            return {
+                ...prev,
+                files: updated
+            }
+
         })
 
         setDragIndex(null)
+    
     }
 
     // Set Image as Primary
     const setPrimary = (id: string) => {
-        setImages((prev) => prev.map((image) => ({ ...image, isPrimary: image.id === id })))
+
+        setFormData(prev => {
+
+            return {
+                ...prev,
+                files: prev.files.map(file => ({
+                    ...file,
+                    isPrimary: file.uniqueId === id
+                }))
+            }
+
+        })
+
     }
 
     // Remove Image
     const removeImage = (id: string) => {
-        console.log("Running Remove Image")
+
+        const fileToDelete = formData.files.find(file => file.uniqueId === id);
+        
+        if (fileToDelete?.preview) {
+            URL.revokeObjectURL(fileToDelete.preview);
+        }
+
+        setFormData(prev => {
+
+            const filtered = prev.files.filter(file => file.uniqueId !== id);
+            
+            const hasPrimaryRemaining = filtered.some(file => file.isPrimary);
+
+            const updated = filtered.map((file, index) => {
+
+                const shouldBePrimary = hasPrimaryRemaining ? file.isPrimary : index === 0;
+
+                return {
+                    ...file,
+                    sortOrder: index,
+                    isPrimary: shouldBePrimary
+                };
+            });
+
+            return {
+                ...prev,
+                files: updated
+            };
+        });
+    
     }
 
     // Get slug on blur input
@@ -163,36 +233,26 @@ export default function ProductFormCreate(){
         }));
     }
 
-    // Save Data
+    // Send Data to Backend
     const save = async () => {
         try {
-
-            // Organize the payload data
-            const data = {
-                ...formData,
-                files: images.map(image => ({
-                    file: image.file,
-                    isPrimary: image.isPrimary
-                })),
-                variants: productVariants
-            }
             
             // Create form data object
             const payload = new FormData()
 
             // Add product info., pricing and images in FormData()
-            Object.entries(data).forEach(([key, value]) => {
+            Object.entries(formData).forEach(([key, value]) => {
                 if (value === null || value === undefined) return;
 
                 if(key === 'files'){
-                    (value as ProductImage[]).forEach((image, index) => {
-                        payload.append(`files[${index}].file`, image.file);
+                    (value as ProductFile[]).forEach((image, index) => {
+                        payload.append(`files[${index}].file`, image.file ?? "");
                         payload.append(`files[${index}].isPrimary`, image.isPrimary.toString());
                     })
                 }else if(key === 'variants'){
                     (value as ProductVariant[]).forEach((variant, index) => {
-                        variant.attributeValues.forEach((attributeValue, idx) => {
-                            payload.append(`variants[${index}].attributeValueIds[${idx}]`, attributeValue.id.toString());
+                        variant.attributeValueIds.forEach((attributeId, idx) => {
+                            payload.append(`variants[${index}].attributeValueIds[${idx}]`, attributeId.toString());
                         })
                         payload.append(`variants[${index}].sku`, variant.sku);
                         payload.append(`variants[${index}].price`, variant.price);
@@ -233,10 +293,10 @@ export default function ProductFormCreate(){
                     hasVariant: false,
                     stockQuantity: 0,
                     isActive: true,
-                    isFeatured: false
+                    isFeatured: false,
+                    files: [],
+                    variants: []
                 })
-                setProductVariants([])
-                setImages([])
                 setErrors({})
             }
 
@@ -454,12 +514,13 @@ export default function ProductFormCreate(){
                             }}
                         />
                     </div>
-                    {images.length > 0 && (
+                    { imagesError && (<FieldError className="mt-3">{imagesError}</FieldError>) }
+                    {formData.files.length > 0 && (
                         <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                             {
-                                images.map((image, index) => (
+                                formData.files.map((image, index) => (
                                     <div
-                                        key={image.id}
+                                        key={image.uniqueId}
                                         draggable
                                         onDragStart={() => setDragIndex(index)}
                                         onDragOver={(e) => e.preventDefault()}
@@ -468,7 +529,7 @@ export default function ProductFormCreate(){
                                             dragIndex === index ? "opacity-40" : ""
                                         }`}
                                     >
-                                        <Image src={image.preview} alt={"Product image"} fill unoptimized className="object-cover" />
+                                        <Image src={image.preview ?? ""} alt={"Product image"} fill unoptimized className="object-cover" />
                                         {image.isPrimary && (
                                             <span className="absolute left-1.5 top-1.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                                                 Primary
@@ -480,7 +541,7 @@ export default function ProductFormCreate(){
                                         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-linear-to-t from-black/60 to-transparent p-1.5">
                                         <button
                                                 type="button"
-                                                onClick={() => setPrimary(image.id)}
+                                                onClick={() => setPrimary(image.uniqueId)}
                                                 title="Set as primary image"
                                                 className="rounded p-1 transition-colors hover:bg-white/20"
                                             >
@@ -489,7 +550,7 @@ export default function ProductFormCreate(){
                                         <span className="text-[10px] font-medium text-white/80">#{index + 1}</span>
                                         <button
                                             type="button"
-                                            onClick={() => removeImage(image.id)}
+                                            onClick={() => removeImage(image.uniqueId)}
                                             title="Remove image"
                                             className="rounded p-1 text-white opacity-0 transition-opacity hover:bg-white/20 group-hover:opacity-100"
                                         >
@@ -500,7 +561,7 @@ export default function ProductFormCreate(){
                                 ))
                             }
                         </div>
-                        )}
+                    )}
                 </SectionCard>
 
                 {/* Pricing */}
@@ -632,12 +693,16 @@ export default function ProductFormCreate(){
                                 id="hasVariant" 
                                 checked={formData.hasVariant} 
                                 onCheckedChange={(value) => {
+
                                     setFormData(prev => ({
                                      ...prev, hasVariant: value 
                                     }))
 
                                     if(!value){
-                                        setProductVariants([])
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            variants: []
+                                        }))
                                     }
                                 }} 
                             />
@@ -677,10 +742,14 @@ export default function ProductFormCreate(){
                                         Choose the attributes and values your variants are made of.
                                     </p>
                                 </div>
+
                                 <ProductAttributeList 
                                     onVariantsChange={handleVariantsChange}
                                     variantErrors={errors}
+                                    existingVariants={[]}
+                                    existingVariantAttributes={[]}
                                 />
+
                             </div>
                         )
                     }

@@ -2,33 +2,43 @@ import { Button } from "@/components/ui/button"
 import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { cartesian } from "@/lib/helper"
-import { ProductAttributeValue, ProductVariant } from "@/types/product"
+import { cartesian, generateCombinationKey } from "@/lib/helper"
+import { ProductAttribute, ProductAttributeValue, ProductVariant } from "@/types/product"
 import { Boxes, Layers } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type ProductVariantCombinationProps = {
     selectedAttributeValues: ProductAttributeValue[][],
     onVariantChange: (productVariant: ProductVariant[]) => void,
-    variantErrors: Record<string, string>
+    variantErrors: Record<string, string>,
+    existingVariants: ProductVariant[] | [],
 }
 
-export default function ProductVariantCombination({ selectedAttributeValues, onVariantChange, variantErrors } : ProductVariantCombinationProps){
+export default function ProductVariantCombination({ selectedAttributeValues, onVariantChange, existingVariants, variantErrors } : ProductVariantCombinationProps){
 
-    const [productVariants, setProductVariants] = useState<ProductVariant[]>([])
+    const [variantRows, setVariantRows] = useState<ProductVariant[]>([]);
     const [stockQuantity, setStockQuantity] = useState<number>(0)
 
+
     // Generate variant combination
-    const variants: ProductAttributeValue[][] = useMemo(() => {
+    const combinations: ProductAttributeValue[][] = useMemo(() => {
+
+        if (!selectedAttributeValues.length) {
+            return [];
+        }
+
         return cartesian(selectedAttributeValues)
-    }, [selectedAttributeValues])
+
+    }, [selectedAttributeValues]);
+
+
 
     // Handle change event in every input and save to the state
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
         
         const { name, value } = event.target
         
-        setProductVariants(prev =>
+        setVariantRows(prev =>
             prev.map((variant, idx) =>
                 idx === index ? {...variant, [name]: value} : variant
             )
@@ -36,20 +46,22 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
 
     }
 
+
     // Checked change for switch component
     const onCheckedChange = (value: boolean, index: number) => {
-        setProductVariants(prev =>
+        setVariantRows(prev =>
             prev.map((variant, idx) =>
                 idx === index ? {...variant, isActive: value} : variant
             )
         )
     }
 
+
     // Set stock for all
     const setStockForAll = () => {
         if(stockQuantity <= 0) return
         
-        setProductVariants(prev =>
+        setVariantRows(prev =>
             prev.map(variant => ({
                 ...variant,
                 stockQuantity: stockQuantity
@@ -59,36 +71,56 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
         setStockQuantity(0)
     }
 
-    // Create state for every new variant combination and preserve if theres existing
-    useEffect(() => {
-        if(variants.length > 0 && variants[0].length > 0){
-            setProductVariants(prev =>
-                variants.map(attributeValues => {
-                    const existingVariant = prev.find(prevVariant =>
-                        prevVariant.attributeValues.every(value => attributeValues.some(
-                                newValue => newValue.id === value.id
-                            )
-                        ) &&
-                        attributeValues.length === prevVariant.attributeValues.length
-                    )
 
-                    return existingVariant ?? {
-                        attributeValues,
-                        sku: "",
-                        price: "",
-                        comparePrice: "",
-                        costPrice: "",
-                        stockQuantity: 0,
-                        isActive: true
-                    }
-                })
-            )
-        }
-    }, [variants])
+    // Create Map for existing variants
+    const existingVariantMap = useMemo(() => {
+        return new Map(
+            existingVariants.map(variant => [
+                generateCombinationKey(variant.attributeValueIds),
+                variant,
+            ])
+        );
+    }, []);
+
+
+    // Create variant rows
+    const initialVariantRows: ProductVariant[] = useMemo(() => {
+
+        return combinations.map(combination => {
+            
+            const attributeValueIds = combination.map(value => value.id);
+
+            const attributeNames = combination.map(value => value.productAttributeValueName)
+
+            const key = generateCombinationKey(attributeValueIds);
+
+            const existing = existingVariantMap.get(key);
+
+            return {
+                id: existing?.id ?? null,
+                attributeName: attributeNames.join("/"),
+                attributeValueIds: attributeValueIds,
+                sku: existing?.sku ?? "",
+                price: existing?.price ?? '0',
+                comparePrice: existing?.comparePrice ?? '0',
+                costPrice: existing?.costPrice ?? '0',
+                stockQuantity: existing?.stockQuantity ?? 0,
+                weight: existing?.weight ?? 0,
+                isActive: existing?.isActive ?? true,
+            };
+        });
+
+    }, [combinations, existingVariantMap]);
+
 
     useEffect(() => {
-        onVariantChange(productVariants)
-    }, [productVariants])
+        setVariantRows(initialVariantRows);
+    }, [initialVariantRows]);
+
+
+    useEffect(() => {
+        onVariantChange(variantRows)
+    }, [variantRows])
 
     return (
         <div>
@@ -99,15 +131,15 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                 </span>
                 <h3 className="text-sm font-semibold text-sidebar-foreground">Variant Combinations</h3>
                 {
-                    variants.length > 0 && variants[0].length > 0 && (
+                    combinations.length > 0 && combinations[0].length > 0 && (
                         <span className="rounded-full bg-sidebar-accent px-2 py-0.5 text-xs font-medium text-sidebar-foreground/60">
-                            {variants.length} generated
+                            {combinations.length} generated
                         </span>
                     )
                 }
                 </div>
                 {
-                    variants.length > 0 && variants[0].length > 0 && (
+                    combinations.length > 0 && combinations[0].length > 0 && (
                         <div className="flex items-center gap-2">
                             <Input
                                 type="number"
@@ -127,7 +159,7 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
             </div>
 
             {
-                productVariants.length > 0 ? (
+                variantRows.length > 0 ? (
                     <>
                         <p className="mb-3 text-xs text-sidebar-foreground/40">
                             Regenerating attribute selections preserves any data already entered. Blank price overrides inherit the base price.
@@ -164,22 +196,14 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                                 </thead>
                                 <tbody>
                                     {
-                                        productVariants.map((variant, index) => {
-                                            const attributeValues: ProductAttributeValue[] = variant.attributeValues
+                                        variantRows.map((variant, index) => {
                                             return (
                                                 <tr key={index} className="border-b border-sidebar-border last:border-0">
                                                     <td className="px-3 py-2.5 pr-4">
                                                         <div className="flex items-center gap-1.5 text-sm font-medium text-sidebar-foreground">
                                                             <Layers className="size-3.5 shrink-0 text-sidebar-foreground/40" />
                                                             <div>
-                                                                {
-                                                                    attributeValues.map((value, index) => (
-                                                                        <span key={value.id}>
-                                                                            {value.productAttributeValueName}
-                                                                            {index < attributeValues.length - 1 ? '/' : ''} 
-                                                                        </span>
-                                                                    ))
-                                                                }
+                                                                { variant.attributeName }
                                                             </div>
                                                         </div>
                                                     </td>

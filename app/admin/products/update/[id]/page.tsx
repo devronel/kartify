@@ -23,11 +23,11 @@ export default async function ProductUpdatePage({ params }: ProductUpdatePagePro
         const response = await apiServer(`/api/admin/product/${id}`);
         
         const payloadResponse = response.data.payload
-        
+
         const payload: ProductUpdateFormValues = {
             name: payloadResponse.name,
             slug: payloadResponse.slug,
-            category: payloadResponse.category,
+            categoryId: payloadResponse.categoryId,
             sku: payloadResponse.sku,
             shortDescription: payloadResponse.shortDescription,
             description: payloadResponse.description,
@@ -43,10 +43,9 @@ export default async function ProductUpdatePage({ params }: ProductUpdatePagePro
                 preview: file.fileUrl,
                 isPrimary: file.isPrimary,
             })),
-            variants: payloadResponse.variants
+            variants: payloadResponse.variants,
+            variantAttributes: payloadResponse.attributes
         }
-
-        console.log(payload)
 
         return (
             <div className="pb-4">

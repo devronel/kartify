@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import apiClient from "@/lib/api-client"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -9,11 +9,11 @@ import { Category, CategoryTree, CategoryTreeNodeProps } from "@/types/admin/cat
 import { AlertCircleIcon, ChevronDown, ChevronUp, FolderTree } from "lucide-react"
 
 type SelectCategoryProps = {
-    onSelected: (category: Category) => void
-    value?: Category 
+    onSelected: (category: Category) => void,
+    categoryId?: number
 }
 
-export default function SelectCategory({ onSelected, value } : SelectCategoryProps) {
+export default function SelectCategory({ onSelected, categoryId } : SelectCategoryProps) {
 
     const dropdownRef = useRef<HTMLDivElement>(null)
     const [categories, setCategories] = useState<CategoryTree[]>([])
@@ -50,10 +50,20 @@ export default function SelectCategory({ onSelected, value } : SelectCategoryPro
     }, [openDialog])
 
 
+    // Fetch category if theres category id in the props for edit
     useEffect(() => {
-        if(value){
-            setSelectedCategory(value)
-            onSelected(value)
+        if(categoryId){
+            const getCategoryById = async () => {
+                try {
+                    const response = await apiClient(`/api/product/category/${categoryId}`)
+                    const payload = response.data.payload as Category
+                    setSelectedCategory(payload)
+                    onSelected(payload)
+                } catch (error: any) {
+                    setHasError("Something wen't wrong.")
+                }
+            }
+            getCategoryById()
         }
     }, [])
 

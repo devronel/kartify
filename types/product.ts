@@ -18,7 +18,9 @@ export type ProductFormValues = {
   hasVariant: boolean,
   stockQuantity: number,
   isActive: boolean,
-  isFeatured: boolean
+  isFeatured: boolean,
+  files: ProductFile[],
+  variants: ProductVariant[]
 }
 
 export type ProductAttribute = {
@@ -33,21 +35,33 @@ export type ProductAttributeValue = {
   productAttributeValueName: string
 }
 
-export type ProductImage = {
-  id: string
-  file: File
-  preview: string
-  isPrimary: boolean
+// export type ProductImage = {
+//   id: string
+//   file: File
+//   preview: string
+//   isPrimary: boolean
+//   sortOrder: number
+// }
+
+export type ProductFile = {
+  uniqueId: string,
+  id?: number | null,
+  isPrimary: boolean,
   sortOrder: number
+  preview?: string,
+  file?: File,
 }
 
 export type ProductVariant = {
-  attributeValues: ProductAttributeValue[],
+  id?: number | null,
+  attributeName?: string,
+  attributeValueIds: number[],
   sku: string,
   price: string,
   comparePrice: string,
   costPrice: string,
   stockQuantity: number,
+  weight: number,
   isActive: boolean
 }
 
@@ -72,7 +86,7 @@ export type Product = {
 export type ProductUpdateFormValues = {
   name: string,
   slug: string,
-  category: Category,
+  categoryId: number,
   sku: string,
   shortDescription: string,
   description: string,
@@ -83,7 +97,8 @@ export type ProductUpdateFormValues = {
   hasVariant: boolean,
   stockQuantity: number,
   files: ProductUpdateFileValues[] | [],
-  variants: ProductUpdateVariantValues[] | []
+  variants: ProductVariant[] | [],
+  variantAttributes: ProductAttribute[] | []
 }
 
 export type ProductUpdateFileValues = {
@@ -95,9 +110,9 @@ export type ProductUpdateFileValues = {
   file?: File,
 }
 
-export type ProductUpdateVariantValues = {
-  id: number,
-  attributeValueIds: number[],
+export type ProductUpdateVariant = {
+  id?: number,
+  attributeIds: number[],
   sku: string,
   price: string,
   comparePrice: string,

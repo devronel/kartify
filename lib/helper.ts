@@ -150,3 +150,9 @@ export const generatePagination = (currentPage: number, totalPages: number, visi
   
     return pages
 }
+
+
+// Generate combination key
+export const generateCombinationKey = (ids: number[]) => {
+    return [...ids].sort((a, b) => a - b).join("-");
+};

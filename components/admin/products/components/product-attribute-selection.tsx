@@ -12,11 +12,12 @@ import { useState } from "react"
 
 type ProductAttributeSelectionProps = {
     data: ProductAttribute,
+    selectedAttributeValues: ProductAttributeValue[][] | [],
     onAttributeValueSelect: (attributeValues: ProductAttributeValue) => void,
     onProductAttributeUpdate: (attributeValues: ProductAttributeValue) => void
 }
 
-export default function ProductAttributeSelection({ data, onAttributeValueSelect, onProductAttributeUpdate } : ProductAttributeSelectionProps){
+export default function ProductAttributeSelection({ data, selectedAttributeValues, onAttributeValueSelect, onProductAttributeUpdate } : ProductAttributeSelectionProps){
 
     const [isSaving, setIsSaving] = useState<boolean>(false)
     const [expanded, setExpanded] = useState<boolean>(true)
@@ -100,16 +101,24 @@ export default function ProductAttributeSelection({ data, onAttributeValueSelect
                         data.values.length > 0 && (
                             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                                 {
-                                    data.values.map(value => (
-                                        <label key={value.id} className="flex cursor-pointer items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/30 px-2.5 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                className="size-3.5 shrink-0 accent-sidebar-primary"
-                                                onChange={() => onAttributeValueSelect(value)}
-                                            />
-                                            { value.productAttributeValueName }
-                                        </label>
-                                    ))
+                                    data.values.map(value => {
+
+                                        const isChecked = selectedAttributeValues
+                                                .flatMap(attributeValues => attributeValues)
+                                                .some(attributeValue => attributeValue.id === value.id)
+
+                                        return (
+                                            <label key={value.id} className="flex cursor-pointer items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/30 px-2.5 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    className="size-3.5 shrink-0 accent-sidebar-primary"
+                                                    checked={isChecked}
+                                                    onChange={() => onAttributeValueSelect(value)}
+                                                />
+                                                { value.productAttributeValueName }
+                                            </label>
+                                        )
+                                    })
                                 }
                             </div>
                         )

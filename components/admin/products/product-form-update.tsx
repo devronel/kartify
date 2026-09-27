@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_MB, ProductUpdateFileValues, ProductUpdateFormValues } from "@/types/product"
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_MB, ProductUpdateFileValues, ProductUpdateFormValues, ProductVariant } from "@/types/product"
 import SectionCard from "../shared/SectionCard"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,9 @@ import { Category } from "@/types/admin/category"
 import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import ProductAttributeUpdateList from "./components/product-attribute-update-list"
+import ProductAttributeList from "./components/product-attribute-list"
 
 type ProductFormUpdateProps = {
     product: ProductUpdateFormValues
@@ -29,7 +32,7 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
     const [formData, setFormData] = useState<ProductUpdateFormValues>({
         name: product.name,
         slug: product.slug,
-        category: product.category,
+        categoryId: product.categoryId,
         sku: product.sku ?? "",
         shortDescription: product.shortDescription ?? "",
         description: product.description ?? "",
@@ -40,7 +43,8 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
         hasVariant: product.hasVariant,
         stockQuantity: product.stockQuantity,
         files: product.files,
-        variants: product.variants
+        variants: product.variants,
+        variantAttributes: []
     })
 
 
@@ -207,10 +211,21 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
         })
     }
 
+
+    // Handle Variants
+    const handleVariantsChange = (variants: ProductVariant[]) => {
+        setFormData(prev => {
+            return {
+                ...prev,
+                variants: variants
+            }
+        })
+    }
+
     
     // Save Update Product
     const save = () => {
-        console.log(formData)
+        console.log(formData.variants)
     }
 
     return (
@@ -308,7 +323,7 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
                                 </FieldLabel>
                                 <SelectCategory 
                                     onSelected={selectedCategories}
-                                    value={formData.category}
+                                    categoryId={formData.categoryId}
                                 />
                                 { errors.categoryId && (<FieldError>{errors.categoryId}</FieldError>) }
                             </Field>
@@ -575,6 +590,80 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
                             </div>
                         </div>
                     </div>
+                </SectionCard>
+
+
+                {/* Product Variant */}
+                <SectionCard
+                    title="Inventory / Variants"
+                    subtitle="Stock and size/color combinations"
+                    action={
+                        <div className="flex items-center gap-3">
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-sidebar-foreground">Has Variants?</p>
+                                <p className="text-xs text-sidebar-foreground/50">
+                                    {formData.hasVariant ? "Multiple size/color combos" : "Simple product"}
+                                </p>
+                            </div>
+                            <Switch 
+                                id="hasVariant" 
+                                checked={formData.hasVariant} 
+                                onCheckedChange={(value) => {
+                                    setFormData(prev => ({
+                                        ...prev, hasVariant: value 
+                                    }))
+
+                                    // if(!value){
+                                    //     setProductVariants([])
+                                    // }
+                                }} 
+                            />
+                        </div>
+                    }>
+                    {
+                        !formData.hasVariant ? (
+                            <div className="sm:max-w-xs">
+                                <Field>
+                                    <FieldLabel htmlFor="productStockQuantity">
+                                        Stock Quantity <span className="text-red-500">*</span>
+                                    </FieldLabel>
+                                    <Input
+                                        id="productStockQuantity"
+                                        name="stockQuantity"
+                                        type="number"
+                                        inputMode="numeric"
+                                        min="0"
+                                        step="1"
+                                        placeholder="0"
+                                        value={formData.stockQuantity}
+                                        onChange={handleChange}
+                                    />
+                                </Field>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <span className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground/60">
+                                            1
+                                        </span>
+                                        <h3 className="text-sm font-semibold text-sidebar-foreground">Attribute Selection</h3>
+                                    </div>
+                                    <p className="mb-4 text-sm text-sidebar-foreground/60">
+                                        Choose the attributes and values your variants are made of.
+                                    </p>
+                                </div>
+
+                                <ProductAttributeList 
+                                    onVariantsChange={handleVariantsChange}
+                                    variantErrors={errors}
+                                    existingVariants={product.variants}
+                                    existingVariantAttributes={product.variantAttributes}
+                                />
+                                
+                            </div>
+                        )
+                    }
                 </SectionCard>
 
                 <div className="flex items-center justify-end">
