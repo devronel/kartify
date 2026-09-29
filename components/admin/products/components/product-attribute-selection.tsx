@@ -8,7 +8,7 @@ import apiClient, { isAxiosError } from "@/lib/api-client"
 import { ValidationErrorResponse } from "@/types/api-error"
 import { ProductAttribute, ProductAttributeValue } from "@/types/product"
 import { ChevronDown, Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 type ProductAttributeSelectionProps = {
     data: ProductAttribute,
@@ -70,6 +70,14 @@ export default function ProductAttributeSelection({ data, selectedAttributeValue
         }
     }
 
+    useEffect(() => {
+        const getSelected = selectedAttributeValues.flatMap(subArray => 
+            subArray.filter(item => item.productAttributeId === data.id)
+                    .map(item => item.id)
+        );
+        setSelectedCount(getSelected)
+    }, [])
+
     return (
         <div className="overflow-hidden rounded-lg border border-sidebar-border">
             <div className="flex items-center gap-3 px-3 py-2.5">
@@ -113,7 +121,11 @@ export default function ProductAttributeSelection({ data, selectedAttributeValue
                                                     className="size-3.5 shrink-0 accent-sidebar-primary"
                                                     checked={isChecked}
                                                     onChange={() => {
-                                                        console.log(value)
+                                                        setSelectedCount(prev => {
+                                                            return prev.includes(value.id)
+                                                                ? prev.filter(item => item !== value.id)
+                                                                : [...prev, value.id]
+                                                        })
                                                         onAttributeValueSelect(value)
                                                     }}
                                                 />

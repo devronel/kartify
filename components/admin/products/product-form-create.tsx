@@ -4,7 +4,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import SectionCard from "../shared/SectionCard";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
-import { GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
+import { ArrowLeft, GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react";
 import SelectCategory from "../categories/category-select";
 import { Category } from "@/types/admin/category";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,17 +18,19 @@ import ProductAttributeList from "./components/product-attribute-list";
 import apiClient, { isAxiosError } from "@/lib/api-client";
 import { ValidationErrorResponse } from "@/types/api-error";
 import { toast } from "@/components/ui/toast";
-import { Spinner } from "@/components/ui/spinner";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import Link from "next/link";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_IMAGE_SIZE_MB = 5
 
 export default function ProductFormCreate(){
 
+    const confirmDialog = useConfirmDialog()
     const [dragOver, setDragOver] = useState<boolean>(false)
     const [dragIndex, setDragIndex] = useState<number | null>(null)
     const [imagesError, setImagesError] = useState<string | null>(null)
-    const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [slugEditing, setSlugEditing] = useState<boolean>(false)
     const [formData, setFormData] = useState<ProductFormValues>({
@@ -267,8 +269,6 @@ export default function ProductFormCreate(){
 
             });
 
-            setIsButtonLoading(true)
-
             await apiClient.post('/api/admin/product', payload)
 
             toast.add({
@@ -307,11 +307,22 @@ export default function ProductFormCreate(){
                 type: 'Error',
                 description: "Something went wrong."
             })
-        } finally {
-            setIsButtonLoading(false)
         }
 
     }
+
+    // Open Confirm Dialog
+    const openConfirmDialog = () => {
+        confirmDialog.alert({
+            title: "Create product?",
+            message: "Are you sure you want to create this product? The product will be saved.",
+            confirmText: "Confirm",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                await save()
+            },
+        });
+    };
 
     return (
         <>
@@ -756,17 +767,30 @@ export default function ProductFormCreate(){
                 </SectionCard>
 
                 <div className="flex items-center justify-end">
+                    <Link
+                        href="/admin/products"
+                        className="inline-flex w-fit items-center gap-2 rounded-lg border border-sidebar-border px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors"
+                    >
+                        <ArrowLeft className="size-4" />
+                        Back to Products
+                    </Link>
                     <Button
                         type="button"
-                        disabled={isButtonLoading}
-                        onClick={save}
+                        onClick={openConfirmDialog}
                         className="cursor-pointer"
                     >
-                        {
-                            isButtonLoading ? <Spinner className="size-4" /> : <Send className="size-4" />
-                        }
-                        Publish Product
+                        <Send className="size-4" /> Publish Product
                     </Button>
+                    <ConfirmDialog 
+                        open={confirmDialog.open}
+                        title={confirmDialog.options.title}
+                        message={confirmDialog.options.message}
+                        confirmText={confirmDialog.options.confirmText}
+                        cancelText={confirmDialog.options.cancelText}
+                        isLoading={confirmDialog.isLoading}
+                        onConfirm={confirmDialog.handleConfirm}
+                        onCancel={confirmDialog.close}
+                    />
                 </div>
             </div>
         </>

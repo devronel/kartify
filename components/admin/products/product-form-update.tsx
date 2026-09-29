@@ -7,17 +7,19 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
 import { slugify, slugifyFinal, uid } from "@/lib/helper"
-import { GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, Send, Star, Trash2, UploadCloud } from "lucide-react"
+import { ArrowLeft, GripVertical, Lock, Pencil, PhilippinePeso, RefreshCw, RotateCcwClock, Send, Star, Trash2, UploadCloud } from "lucide-react"
 import SelectCategory from "../categories/category-select"
 import { Category } from "@/types/admin/category"
 import { Textarea } from "@/components/ui/textarea"
-import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import ProductAttributeList from "./components/product-attribute-list"
 import apiClient, { isAxiosError } from "@/lib/api-client"
 import { ValidationErrorResponse } from "@/types/api-error"
 import { toast } from "@/components/ui/toast"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import Link from "next/link"
 
 type ProductFormUpdateProps = {
     id: number,
@@ -26,11 +28,11 @@ type ProductFormUpdateProps = {
 
 export default function ProductFormUpdate({ id, product }: ProductFormUpdateProps){
 
+    const confirmDialog = useConfirmDialog()
     const [dragOver, setDragOver] = useState<boolean>(false)
     const [dragIndex, setDragIndex] = useState<number | null>(null)
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [imagesError, setImagesError] = useState<string | null>(null)
-    const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [slugEditing, setSlugEditing] = useState<boolean>(false)
     const [formData, setFormData] = useState<ProductFormValues>({
         name: product.name,
@@ -287,8 +289,6 @@ export default function ProductFormUpdate({ id, product }: ProductFormUpdateProp
 
             });
 
-            setIsButtonLoading(true)
-
             await apiClient.put(`/api/admin/product/${id}`, payload)
 
             toast.add({
@@ -309,10 +309,22 @@ export default function ProductFormUpdate({ id, product }: ProductFormUpdateProp
                 type: 'Error',
                 description: "Something went wrong."
             })
-        } finally {
-            setIsButtonLoading(false)
         }
     }
+
+
+    // Open Confirm Dialog
+    const openConfirmDialog = () => {
+        confirmDialog.alert({
+            title: "Update product?",
+            message: "Are you sure you want to update this product? The changes will be saved.",
+            confirmText: "Confirm",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                await save()
+            },
+        });
+    };
 
     return (
         <>
@@ -699,9 +711,14 @@ export default function ProductFormUpdate({ id, product }: ProductFormUpdateProp
                                         ...prev, hasVariant: value 
                                     }))
 
-                                    // if(!value){
-                                    //     setProductVariants([])
-                                    // }
+                                    if(!value){
+                                        setFormData(prev => {
+                                            return {
+                                                ...prev,
+                                                variants: []
+                                            }
+                                        })
+                                    }
                                 }} 
                             />
                         </div>
@@ -752,18 +769,31 @@ export default function ProductFormUpdate({ id, product }: ProductFormUpdateProp
                     }
                 </SectionCard>
 
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-2">
+                    <Link
+                        href="/admin/products"
+                        className="inline-flex w-fit items-center gap-2 rounded-lg border border-sidebar-border px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors"
+                    >
+                        <ArrowLeft className="size-4" />
+                        Back to Products
+                    </Link>
                     <Button
                         type="button"
-                        disabled={isButtonLoading}
-                        onClick={save}
+                        onClick={openConfirmDialog}
                         className="cursor-pointer"
                     >
-                        {
-                            isButtonLoading ? <Spinner className="size-4" /> : <Send className="size-4" />
-                        }
-                        Publish Product
+                        <RotateCcwClock className="size-4" /> Update Product
                     </Button>
+                    <ConfirmDialog
+                        open={confirmDialog.open}
+                        title={confirmDialog.options.title}
+                        message={confirmDialog.options.message}
+                        confirmText={confirmDialog.options.confirmText}
+                        cancelText={confirmDialog.options.cancelText}
+                        isLoading={confirmDialog.isLoading}
+                        onConfirm={confirmDialog.handleConfirm}
+                        onCancel={confirmDialog.close}
+                    />
                 </div>
             </div>
         </>
