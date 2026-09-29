@@ -1,12 +1,16 @@
 import ProductFormUpdate from "@/components/admin/products/product-form-update";
 import { apiServer } from "@/lib/api-server";
 import { uid } from "@/lib/helper";
-import { ProductUpdateFileValues, ProductUpdateFormValues } from "@/types/product";
+import { ProductUpdateDetails } from "@/types/product";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-interface ProductUpdatePageProps {
+export const metadata = {
+  title: "Admin - Update Product"
+};
+
+type ProductUpdatePageProps = {
   params: Promise<{ id: string }>;
 }
 
@@ -24,7 +28,7 @@ export default async function ProductUpdatePage({ params }: ProductUpdatePagePro
         
         const payloadResponse = response.data.payload
 
-        const payload: ProductUpdateFormValues = {
+        const payload: ProductUpdateDetails = {
             name: payloadResponse.name,
             slug: payloadResponse.slug,
             categoryId: payloadResponse.categoryId,
@@ -66,6 +70,7 @@ export default async function ProductUpdatePage({ params }: ProductUpdatePagePro
                 </div>
     
                 <ProductFormUpdate 
+                    id={parseInt(id)}
                     product={payload}
                 />
     

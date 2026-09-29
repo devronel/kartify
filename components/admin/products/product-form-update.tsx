@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_MB, ProductUpdateFileValues, ProductUpdateFormValues, ProductVariant } from "@/types/product"
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_MB, ProductFile, ProductFormValues, ProductUpdateDetails, ProductVariant } from "@/types/product"
 import SectionCard from "../shared/SectionCard"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -14,14 +14,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import ProductAttributeUpdateList from "./components/product-attribute-update-list"
 import ProductAttributeList from "./components/product-attribute-list"
+import apiClient, { isAxiosError } from "@/lib/api-client"
+import { ValidationErrorResponse } from "@/types/api-error"
+import { toast } from "@/components/ui/toast"
 
 type ProductFormUpdateProps = {
-    product: ProductUpdateFormValues
+    id: number,
+    product: ProductUpdateDetails
 }
 
-export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
+export default function ProductFormUpdate({ id, product }: ProductFormUpdateProps){
 
     const [dragOver, setDragOver] = useState<boolean>(false)
     const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -29,7 +32,7 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
     const [imagesError, setImagesError] = useState<string | null>(null)
     const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
     const [slugEditing, setSlugEditing] = useState<boolean>(false)
-    const [formData, setFormData] = useState<ProductUpdateFormValues>({
+    const [formData, setFormData] = useState<ProductFormValues>({
         name: product.name,
         slug: product.slug,
         categoryId: product.categoryId,
@@ -121,7 +124,7 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
 
             const files = [...prev.files]
 
-            const added = acceptedFile.map<ProductUpdateFileValues>((file) => ({
+            const added = acceptedFile.map<ProductFile>((file) => ({
                 id: null,
                 uniqueId: uid(),
                 file,
@@ -197,18 +200,36 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
 
     // Remove images
     const removeImage = (id: string) => {
+
+        const fileToDelete = formData.files.find(file => file.uniqueId === id);
+        
+        if (fileToDelete?.preview) {
+            URL.revokeObjectURL(fileToDelete.preview);
+        }
+
         setFormData(prev => {
+
+            const filtered = prev.files.filter(file => file.uniqueId !== id);
             
-            const files = [...prev.files]
-            
-            const updated = files.filter(image => image.uniqueId !== id)
+            const hasPrimaryRemaining = filtered.some(file => file.isPrimary);
+
+            const updated = filtered.map((file, index) => {
+
+                const shouldBePrimary = hasPrimaryRemaining ? file.isPrimary : index === 0;
+
+                return {
+                    ...file,
+                    sortOrder: index,
+                    isPrimary: shouldBePrimary
+                };
+            });
 
             return {
                 ...prev,
                 files: updated
-            }
+            };
+        });
 
-        })
     }
 
 
@@ -224,8 +245,73 @@ export default function ProductFormUpdate({ product }: ProductFormUpdateProps){
 
     
     // Save Update Product
-    const save = () => {
-        console.log(formData.variants)
+    const save = async () => {
+        try {
+            
+            // Create form data object
+            const payload = new FormData()
+
+            // Add product info., pricing and images in FormData()
+            Object.entries(formData).forEach(([key, value]) => {
+                if (value === null || value === undefined) return;
+
+                if(key === 'files'){
+                    (value as ProductFile[]).forEach((image, index) => {
+                        if(image.id){
+                            payload.append(`files[${index}].id`, image.id.toString());
+                        }
+                        if(image.file){
+                            payload.append(`files[${index}].file`, image.file);
+                        }
+                        payload.append(`files[${index}].isPrimary`, image.isPrimary.toString());
+                    })
+                }else if(key === 'variants'){
+                    (value as ProductVariant[]).forEach((variant, index) => {
+                        if(variant.id){
+                            payload.append(`variants[${index}].id`, variant.id?.toString() ?? "");
+                        }
+                        variant.attributeValueIds.forEach((attributeId, idx) => {
+                            payload.append(`variants[${index}].attributeValueIds[${idx}]`, attributeId.toString());
+                        })
+                        payload.append(`variants[${index}].sku`, variant.sku);
+                        payload.append(`variants[${index}].price`, variant.price);
+                        payload.append(`variants[${index}].comparePrice`, variant.comparePrice);
+                        payload.append(`variants[${index}].costPrice`, variant.costPrice);
+                        payload.append(`variants[${index}].stockQuantity`, variant.stockQuantity.toString());
+                        payload.append(`variants[${index}].weight`, "0");
+                        payload.append(`variants[${index}].isActive`, variant.isActive.toString());
+                    })
+                }else{
+                    payload.append(key, String(value));
+                }
+
+            });
+
+            setIsButtonLoading(true)
+
+            await apiClient.put(`/api/admin/product/${id}`, payload)
+
+            toast.add({
+                type: "success",
+                description: `Product ${product.name} updated successfully`,
+            })
+
+            // Reset properties
+            setErrors({})
+
+        } catch (error: any) {
+            if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
+                setErrors(error.response.data.errors)
+                return
+            }
+
+            toast.add({
+                type: 'Error',
+                description: "Something went wrong."
+            })
+        } finally {
+            setIsButtonLoading(false)
+        }
     }
 
     return (

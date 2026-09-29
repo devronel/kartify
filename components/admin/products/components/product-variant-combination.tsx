@@ -3,7 +3,7 @@ import { FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cartesian, generateCombinationKey } from "@/lib/helper"
-import { ProductAttribute, ProductAttributeValue, ProductVariant } from "@/types/product"
+import { ProductAttributeValue, ProductVariant } from "@/types/product"
 import { Boxes, Layers } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
@@ -101,9 +101,9 @@ export default function ProductVariantCombination({ selectedAttributeValues, onV
                 attributeName: attributeNames.join("/"),
                 attributeValueIds: attributeValueIds,
                 sku: existing?.sku ?? "",
-                price: existing?.price ?? '0',
-                comparePrice: existing?.comparePrice ?? '0',
-                costPrice: existing?.costPrice ?? '0',
+                price: existing?.price ?? "",
+                comparePrice: existing?.comparePrice ?? "",
+                costPrice: existing?.costPrice ?? "",
                 stockQuantity: existing?.stockQuantity ?? 0,
                 weight: existing?.weight ?? 0,
                 isActive: existing?.isActive ?? true,

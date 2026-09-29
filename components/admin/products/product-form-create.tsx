@@ -269,36 +269,33 @@ export default function ProductFormCreate(){
 
             setIsButtonLoading(true)
 
-            const response = await apiClient.post('/api/admin/product', payload)
+            await apiClient.post('/api/admin/product', payload)
 
-            if(response.data.success){
+            toast.add({
+                type: "success",
+                description: `Product Created Successfully.`,
+            })
 
-                toast.add({
-                    type: "success",
-                    description: "New Product Created Successfully.",
-                })
-
-                // Reset the state fields
-                setFormData({
-                    name: '',
-                    slug: '',
-                    categoryId: null,
-                    sku: '',
-                    shortDescription: '',
-                    description: '',
-                    price: '',
-                    comparePrice: '',
-                    costPrice: '',
-                    weight: 0,
-                    hasVariant: false,
-                    stockQuantity: 0,
-                    isActive: true,
-                    isFeatured: false,
-                    files: [],
-                    variants: []
-                })
-                setErrors({})
-            }
+            // Reset the state fields
+            setFormData({
+                name: '',
+                slug: '',
+                categoryId: null,
+                sku: '',
+                shortDescription: '',
+                description: '',
+                price: '',
+                comparePrice: '',
+                costPrice: '',
+                weight: 0,
+                hasVariant: false,
+                stockQuantity: 0,
+                isActive: true,
+                isFeatured: false,
+                files: [],
+                variants: []
+            })
+            setErrors({})
 
         } catch (error: any) {
             if (isAxiosError<ValidationErrorResponse>(error) && error.response?.status === 422) {
@@ -705,6 +702,7 @@ export default function ProductFormCreate(){
                                         }))
                                     }
                                 }} 
+                                className={'cursor-pointer'}
                             />
                         </div>
                     }

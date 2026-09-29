@@ -10,7 +10,7 @@ import { AlertCircleIcon, ChevronDown, ChevronUp, FolderTree } from "lucide-reac
 
 type SelectCategoryProps = {
     onSelected: (category: Category) => void,
-    categoryId?: number
+    categoryId?: number | null
 }
 
 export default function SelectCategory({ onSelected, categoryId } : SelectCategoryProps) {

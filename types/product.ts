@@ -1,6 +1,3 @@
-import { Category } from "./admin/category"
-
-
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
 export const MAX_IMAGE_SIZE_MB = 5
 
@@ -17,10 +14,11 @@ export type ProductFormValues = {
   weight: number,
   hasVariant: boolean,
   stockQuantity: number,
-  isActive: boolean,
-  isFeatured: boolean,
+  isActive?: boolean,
+  isFeatured?: boolean,
   files: ProductFile[],
-  variants: ProductVariant[]
+  variants: ProductVariant[],
+  variantAttributes?: ProductAttribute[]
 }
 
 export type ProductAttribute = {
@@ -34,14 +32,6 @@ export type ProductAttributeValue = {
   productAttributeId: number,
   productAttributeValueName: string
 }
-
-// export type ProductImage = {
-//   id: string
-//   file: File
-//   preview: string
-//   isPrimary: boolean
-//   sortOrder: number
-// }
 
 export type ProductFile = {
   uniqueId: string,
@@ -81,9 +71,7 @@ export type Product = {
     primaryImage: string
 }
 
-
-// Product Update
-export type ProductUpdateFormValues = {
+export type ProductUpdateDetails = {
   name: string,
   slug: string,
   categoryId: number,
@@ -96,28 +84,7 @@ export type ProductUpdateFormValues = {
   weight: number,
   hasVariant: boolean,
   stockQuantity: number,
-  files: ProductUpdateFileValues[] | [],
-  variants: ProductVariant[] | [],
-  variantAttributes: ProductAttribute[] | []
-}
-
-export type ProductUpdateFileValues = {
-  uniqueId: string,
-  id?: number | null,
-  isPrimary: boolean,
-  sortOrder: number
-  preview?: string,
-  file?: File,
-}
-
-export type ProductUpdateVariant = {
-  id?: number,
-  attributeIds: number[],
-  sku: string,
-  price: string,
-  comparePrice: string,
-  costPrice: string,
-  stockQuantity: number,
-  weight: number,
-  isActive: boolean
+  files: ProductFile[],
+  variants: ProductVariant[],
+  variantAttributes: ProductAttribute[]
 }

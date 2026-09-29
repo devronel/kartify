@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import apiClient, { isAxiosError } from "@/lib/api-client"
-import { ProductAttribute, ProductAttributeValue, ProductUpdateVariant, ProductVariant } from "@/types/product"
-import { Boxes, Layers, Plus } from "lucide-react"
+import { ProductAttribute, ProductAttributeValue, ProductVariant } from "@/types/product"
+import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import ProductAttributeSelection from "./product-attribute-selection"
 import DataFetchingIndicator from "@/components/shared/data-fetching-indicator"
@@ -12,7 +12,7 @@ import ErrorFetchingIndicator from "@/components/shared/error-fetching-indicator
 import { Spinner } from "@/components/ui/spinner"
 import { ValidationErrorResponse } from "@/types/api-error"
 import { toast } from "@/components/ui/toast"
-import { Field, FieldError } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
 import ProductVariantCombination from "./product-variant-combination"
 
 type ProductAttributeListProps = {

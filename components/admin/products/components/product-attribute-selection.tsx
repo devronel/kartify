@@ -21,9 +21,8 @@ export default function ProductAttributeSelection({ data, selectedAttributeValue
 
     const [isSaving, setIsSaving] = useState<boolean>(false)
     const [expanded, setExpanded] = useState<boolean>(true)
-    const [checked, setChecked] = useState<boolean>(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
-    const [selectedCount, setSelectedCount] = useState<number>(0)
+    const [selectedCount, setSelectedCount] = useState<number[]>([])
     const [attributeValue, setAttributeValue] = useState<string>("")
 
     const toggleExpand = (attributeId: number) => {
@@ -83,9 +82,9 @@ export default function ProductAttributeSelection({ data, selectedAttributeValue
                     </span>
                 </button>
                 {
-                    checked && selectedCount > 0 ? (
+                    selectedCount.length > 0 ? (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                            {selectedCount} selected
+                            {selectedCount.length} selected
                         </span>
                     ) : (
                         <span className="text-xs text-sidebar-foreground/40">
@@ -113,7 +112,10 @@ export default function ProductAttributeSelection({ data, selectedAttributeValue
                                                     type="checkbox"
                                                     className="size-3.5 shrink-0 accent-sidebar-primary"
                                                     checked={isChecked}
-                                                    onChange={() => onAttributeValueSelect(value)}
+                                                    onChange={() => {
+                                                        console.log(value)
+                                                        onAttributeValueSelect(value)
+                                                    }}
                                                 />
                                                 { value.productAttributeValueName }
                                             </label>
