@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getInitials } from "@/lib/helper";
 
-export default function NavBar() {
+export default function AdminNavBar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, logout } = useAuth();
 

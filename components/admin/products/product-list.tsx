@@ -14,6 +14,9 @@ import { Paginate } from "@/types/paginate"
 import { Product } from "@/types/product"
 import useDebounce from "@/hooks/use-debounce"
 import Link from "next/link"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { toast } from "@/components/ui/toast"
 
 const statusStyles: Record<string, string> = {
   true: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
@@ -22,6 +25,7 @@ const statusStyles: Record<string, string> = {
 
 export default function ProductList(){
 
+    const confirmDeleteDialog = useConfirmDialog()
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -36,19 +40,6 @@ export default function ProductList(){
     const [isFetchingData, setIsFetchingData] = useState(true);
     const [hasError, setHasError] = useState<string | null>(null);
 
-    // Debounced input -> URL (and reset to page 1)
-    useEffect(() => {
-        const next = debouncedSearch.trim();
-        if (next === urlSearch) return; // nothing to do (also skips mount)
-
-        const params = new URLSearchParams(searchParams.toString());
-        if (next) params.set("search", next);
-        else params.delete("search");
-        params.delete("page"); // new search => back to page 1
-
-        const queryString = params.toString();
-        router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
-    }, [debouncedSearch]);
 
     // Get all products
     const getProducts = useCallback(
@@ -76,12 +67,62 @@ export default function ProductList(){
         [page, urlSearch]
     );
 
-     // URL -> data
+
+    // Delete product
+    const deleteProduct = async (id: number) => {
+        try {
+            
+            await apiClient.delete(`/api/admin/product/${id}`)
+
+            getProducts();
+
+        } catch (error: any) {
+
+            toast.add({
+                type: 'Error',
+                description: "Something went wrong."
+            })
+
+        }
+    }
+
+
+    // Open Delete product confirm dialog
+    const deleteProductConfirmation = (id: number) => {
+        confirmDeleteDialog.alert({
+            title: "Delete product?",
+            message: "Are you sure you want to delete this product?",
+            confirmText: "Confirm",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                await deleteProduct(id)
+            },
+        });
+    }
+
+
+    // Debounced input -> URL (and reset to page 1)
+    useEffect(() => {
+        const next = debouncedSearch.trim();
+        if (next === urlSearch) return; // nothing to do (also skips mount)
+
+        const params = new URLSearchParams(searchParams.toString());
+        if (next) params.set("search", next);
+        else params.delete("search");
+        params.delete("page"); // new search => back to page 1
+
+        const queryString = params.toString();
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    }, [debouncedSearch]);
+
+
+    // URL -> data
     useEffect(() => {
         const controller = new AbortController();
         getProducts(controller.signal);
         return () => controller.abort();
     }, [getProducts]);
+
 
     return (
         <>
@@ -157,18 +198,19 @@ export default function ProductList(){
                                                             <TableCell className="relative">
                                                                 <DropdownMenu>
                                                                     <DropdownMenuTrigger render={
-                                                                        <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
-                                                                            <MoreHorizontalIcon />
-                                                                            <span className="sr-only">Open menu</span>
-                                                                        </Button>
-                                                                    } />
+                                                                            <Button variant="ghost" size="icon" className="size-8 cursor-pointer">
+                                                                                <MoreHorizontalIcon />
+                                                                                <span className="sr-only">Open menu</span>
+                                                                            </Button>
+                                                                        } 
+                                                                    />
                                                                     <DropdownMenuContent align="end">
                                                                         <DropdownMenuItem className="cursor-pointer">
                                                                             <Link href={`/admin/products/update/${product.id}`} className="w-full">
                                                                                 Edit
                                                                             </Link>
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuItem variant="destructive" className="cursor-pointer">
+                                                                        <DropdownMenuItem onClick={() => deleteProductConfirmation(product.id)} variant="destructive" className="cursor-pointer">
                                                                             Delete
                                                                         </DropdownMenuItem>
                                                                     </DropdownMenuContent>
@@ -211,6 +253,7 @@ export default function ProductList(){
                     </Table>
                 </div>
             </div>
+
             {
                 products && (
                     products.totalItems > products.pageSize && (
@@ -227,6 +270,19 @@ export default function ProductList(){
                     )
                 )
             }
+
+            {/* Delete Product Dialog */}
+            <ConfirmDialog
+                open={confirmDeleteDialog.open}
+                title={confirmDeleteDialog.options.title}
+                message={confirmDeleteDialog.options.message}
+                confirmText={confirmDeleteDialog.options.confirmText}
+                confirmButtonStyle="destructive"
+                cancelText={confirmDeleteDialog.options.cancelText}
+                isLoading={confirmDeleteDialog.isLoading}
+                onConfirm={confirmDeleteDialog.handleConfirm}
+                onCancel={confirmDeleteDialog.close}
+            />
         </>
     )
 }

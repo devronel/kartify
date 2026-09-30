@@ -46,8 +46,6 @@ export default function ProductFormCreate(){
         weight: 0,
         hasVariant: false,
         stockQuantity: 0,
-        isActive: true,
-        isFeatured: false,
         files: [],
         variants: []
     });
@@ -290,8 +288,6 @@ export default function ProductFormCreate(){
                 weight: 0,
                 hasVariant: false,
                 stockQuantity: 0,
-                isActive: true,
-                isFeatured: false,
                 files: [],
                 variants: []
             })

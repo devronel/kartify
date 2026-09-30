@@ -32,7 +32,6 @@ import {
   Truck,
   ChevronRight,
   Boxes,
-  SquarePlus,
   FolderTree,
   PackageCheck,
 } from "lucide-react";
@@ -45,7 +44,6 @@ const mainItems = [
 
 const productSubItems = [
   { label: "Product List", href: "/admin/products", icon: Boxes },
-  { label: "Create Product", href: "/admin/products/create", icon: SquarePlus },
   { label: "Categories", href: "/admin/products/categories", icon: FolderTree },
   { label: "Stock", href: "/admin/products/stock", icon: PackageCheck },
 ];
@@ -57,7 +55,7 @@ const managementItems = [
   { label: "Shipping", href: "/admin/shipping", icon: Truck },
 ];
 
-export function AppSidebar() {
+export default function AdminSidebar() {
   const pathname = usePathname();
   const [productsOpen, setProductsOpen] = useState(
     pathname.startsWith("/admin/products")

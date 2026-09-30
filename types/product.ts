@@ -14,8 +14,6 @@ export type ProductFormValues = {
   weight: number,
   hasVariant: boolean,
   stockQuantity: number,
-  isActive?: boolean,
-  isFeatured?: boolean,
   files: ProductFile[],
   variants: ProductVariant[],
   variantAttributes?: ProductAttribute[]
