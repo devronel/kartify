@@ -7,9 +7,7 @@ export const metadata = {
 export default function Home() {
   return (
     <main>
-      {/* <HeroBanner />
-      <CategoryGrid />
-      <NewArrivals /> */}
+      <p>Welcome to Kartify</p>
     </main>
   );
 }

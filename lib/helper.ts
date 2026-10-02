@@ -156,3 +156,10 @@ export const generatePagination = (currentPage: number, totalPages: number, visi
 export const generateCombinationKey = (ids: number[]) => {
     return [...ids].sort((a, b) => a - b).join("-");
 };
+
+// Money format
+export const moneyFormat = new Intl.NumberFormat('en-US', {
+  style: 'decimal',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});

@@ -5,11 +5,13 @@ import { useState } from "react";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getInitials } from "@/lib/helper";
+import { usePathname } from "next/navigation";
 
 export default function NavBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, logout } = useAuth();
+  const pathname = usePathname()
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
@@ -38,16 +40,30 @@ export default function NavBar() {
 
           <nav className="hidden lg:flex items-center gap-1">
             {[
+              { label: "Home", href: "/" },
+              { label: "Shop", href: "/shop" },
+              { label: "About", href: "/about" },
+              { label: "Contact", href: "/contact" },
               { label: "Admin", href: "/admin/products" }
-            ].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
+            ].map((item) => {
+
+              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
+              return (
+                <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`
+                      ${
+                        isActive ? "bg-slate-100" : ""
+                      } 
+                      rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors`
+                    }
+                  >
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="flex items-center gap-1">
