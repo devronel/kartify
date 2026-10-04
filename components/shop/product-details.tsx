@@ -5,15 +5,6 @@ import Link from "next/link";
 import { moneyFormat } from "@/lib/helper";
 import { ProductAttribute } from "@/types/product";
 import { Swiper as SwiperWrapper, SwiperSlide } from 'swiper/react';
-
-// Import Swiper styles
-import 'swiper/css';
-import 'swiper/css/free-mode';
-import 'swiper/css/navigation';
-import 'swiper/css/thumbs';
-
-import '@/app/swiper.css'
-
 // Import swiper module
 import { FreeMode, Thumbs } from 'swiper/modules';
 import { Swiper } from "swiper/types";
@@ -21,6 +12,14 @@ import { Button } from "../ui/button";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { ButtonGroup } from "../ui/button-group";
 import { Input } from "../ui/input";
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/free-mode';
+import 'swiper/css/navigation'; 
+import 'swiper/css/thumbs';
+
+import '@/app/swiper.css'
 
 interface Product {
   id: string;

@@ -5,6 +5,9 @@ import FilterSidebar from "./filter-sidebar";
 import ProductCard from "./product-card";
 import apiClient from "@/lib/api-client";
 import { Paginate } from "@/types/paginate";
+import CustomPagination from "../shared/pagination";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "../ui/toast";
 
 type PublicProduct = {
   id: number,
@@ -23,22 +26,63 @@ const sortOptions = ["Newest", "Price: Low to High", "Price: High to Low", "Best
 
 export default function ProductList(){
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const page = Number(searchParams.get("page")) || 1;
+  const q = searchParams.get("q") ?? "";
+  const category = searchParams.get("category") ?? "";
+
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sort, setSort] = useState("Newest");
   const [products, setProducts] = useState<Paginate<PublicProduct> | null>(null);
 
+
   const getProducts = async() => {
     try {
-      const response = await apiClient(`/api/products`);
+
+      const params = new URLSearchParams({ 
+        page: String(page),
+        pageSize: "12" 
+      });
+
+      if(q){
+        params.set("q", q);
+      }
+
+      if(category) {
+        params.set("category", category)
+      }
+
+      const response = await apiClient(`/api/products?${params}`);
+
       setProducts(response.data)
-    } catch (error) {
-      console.log(error)
+
+    } catch (error: any) {
+      toast.add({
+          type: 'Error',
+          description: "Something went wrong."
+      })
     }
   }
 
+
+  // Get the products
   useEffect(() => {
     getProducts()
-  }, [])
+  }, [page, q, category])
+
+
+  // Reset the page to 1 if the input is greater than the actual page
+  useEffect(() => {
+    if (products && products.totalPages > 0 && page > products.totalPages) {
+      const params = new URLSearchParams(searchParams.toString());
+
+      params.delete("page");
+
+      router.replace(`?${params.toString()}`);
+    }
+  }, [products, page, searchParams, router]);
 
   return (
     <>
@@ -77,28 +121,23 @@ export default function ProductList(){
             ))}
           </div>
 
-          <div className="mt-10 flex justify-center">
-            <nav className="flex items-center gap-1">
-              <button className="rounded-lg px-3 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
-                Previous
-              </button>
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  className={`rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
-                    page === 1
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-                Next
-              </button>
-            </nav>
-          </div>
+          {
+            products && (
+                products.totalItems > products.pageSize && (
+                    <div className="mt-3">
+                        <CustomPagination 
+                            currentPage={page}
+                            totalPages={products?.totalPages ?? 0}
+                            visiblePages={3}
+                            hasPrevious={products.hasPrevious}
+                            hasNext={products.hasNext}
+                            searchParams={searchParams.toString()}
+                        />
+                    </div>
+                )
+            )
+          }
+
         </div>
       </div>
     </>

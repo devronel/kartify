@@ -6,6 +6,7 @@ import { ChevronDown, LogOut, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getInitials } from "@/lib/helper";
 import { usePathname } from "next/navigation";
+import SearchProduct from "../shop/search";
 
 export default function NavBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,18 +26,7 @@ export default function NavBar() {
             <span className="text-xl font-bold text-slate-900 tracking-tight hidden sm:block">Kartify</span>
           </Link>
 
-          <div className="hidden md:block flex-1 max-w-xl">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products, brands, and more..."
-                className="w-full rounded-full border border-slate-300 bg-slate-50 py-2 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:bg-white focus:ring-1 focus:ring-slate-900/10 outline-none transition-colors"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-            </div>
-          </div>
+          <SearchProduct />
 
           <nav className="hidden lg:flex items-center gap-1">
             {[

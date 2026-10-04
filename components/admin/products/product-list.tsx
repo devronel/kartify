@@ -31,7 +31,7 @@ export default function ProductList(){
     const searchParams = useSearchParams();
 
     const page = Number(searchParams.get("page")) || 1;
-    const urlSearch = searchParams.get("search") ?? "";
+    const urlSearch = searchParams.get("q") ?? "";
 
     const [search, setSearch] = useState(urlSearch);
     const debouncedSearch = useDebounce(search, 400);
@@ -51,7 +51,7 @@ export default function ProductList(){
 
                 const params = new URLSearchParams({ page: String(page) });
 
-                if (urlSearch) params.set("search", urlSearch);
+                if (urlSearch) params.set("q", urlSearch);
 
                 const response = await apiClient(`/api/admin/product?${params}`, { signal });
                 
@@ -107,8 +107,8 @@ export default function ProductList(){
         if (next === urlSearch) return; // nothing to do (also skips mount)
 
         const params = new URLSearchParams(searchParams.toString());
-        if (next) params.set("search", next);
-        else params.delete("search");
+        if (next) params.set("q", next);
+        else params.delete("q");
         params.delete("page"); // new search => back to page 1
 
         const queryString = params.toString();

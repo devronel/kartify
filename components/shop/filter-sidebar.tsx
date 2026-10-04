@@ -1,53 +1,72 @@
 "use client"
 
-import { useState } from "react";
+import apiClient from "@/lib/api-client";
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { toast } from "../ui/toast";
+import { CornerDownRight, Dot } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-const categories = [
-  { label: "Electronics", count: 124 },
-  { label: "Fashion", count: 89 },
-  { label: "Home & Living", count: 67 },
-  { label: "Sports", count: 45 },
-  { label: "Beauty", count: 38 },
-  { label: "Books", count: 52 },
-];
 
-const colors = [
-  { label: "Black", value: "#000000" },
-  { label: "White", value: "#ffffff" },
-  { label: "Red", value: "#ef4444" },
-  { label: "Blue", value: "#3b82f6" },
-  { label: "Green", value: "#22c55e" },
-  { label: "Yellow", value: "#eab308" },
-];
-
-const sizes = ["XS", "S", "M", "L", "XL"];
-
-interface FilterSidebarProps {
+type FilterSidebarProps = {
   mobileOpen: boolean;
   onClose: () => void;
 }
 
-export default function FilterSidebar({ mobileOpen, onClose }: FilterSidebarProps) {
+
+type CategoryFilter = {
+  id: number,
+  name: string,
+  slug: string,
+  productCount: number,
+  child: CategoryFilter[]
+}
+
+export default function FilterSidebar({ 
+  mobileOpen, 
+  onClose 
+}: FilterSidebarProps) {
+
+  const router = useRouter();
+  const [categories, setCategories] = useState<CategoryFilter[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
 
-  const toggleArrayItem = <T,>(arr: T[], item: T): T[] =>
-    arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item];
+
+  //  Get all catigories
+  const getCategories = async() => {
+    try {
+      const response = await apiClient("/api/products/filters/categories");
+      setCategories(response.data)
+    } catch (error: any) {
+      toast.add({
+          type: 'Error',
+          description: "Category Fetching Error"
+      })
+    }
+  }
+
+
+  // Clear filter
+  const clearFilter = () => {
+    setSelectedCategories([]);
+    setPriceRange([0, 500]);
+    router.push("/shop")
+  }
+
+  
+  useEffect(() => {
+    getCategories()
+  }, [])
+
 
   const content = (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
         <button
-          onClick={() => {
-            setSelectedCategories([]);
-            setSelectedColors([]);
-            setSelectedSizes([]);
-            setPriceRange([0, 500]);
-          }}
-          className="text-xs font-medium text-slate-500 hover:text-slate-900"
+          onClick={clearFilter}
+          className="text-xs cursor-pointer font-medium text-slate-500 hover:text-slate-900"
         >
           Clear all
         </button>
@@ -55,37 +74,10 @@ export default function FilterSidebar({ mobileOpen, onClose }: FilterSidebarProp
 
       <div>
         <h4 className="text-sm font-medium text-slate-900 mb-3">Category</h4>
-        <div className="space-y-2">
-          {categories.map((cat) => (
-            <label key={cat.label} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(cat.label)}
-                onChange={() => setSelectedCategories(toggleArrayItem(selectedCategories, cat.label))}
-                className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/20"
-              />
-              <span className="text-sm text-slate-600 flex-1">{cat.label}</span>
-              <span className="text-xs text-slate-400">{cat.count}</span>
-            </label>
+        <div>
+          {categories.map((category) => (
+            <CategoryFilterList key={category.id} {...category} />
           ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="text-sm font-medium text-slate-900 mb-3">Price Range</h4>
-        <div className="space-y-3">
-          <input
-            type="range"
-            min={0}
-            max={500}
-            value={priceRange[1]}
-            onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-            className="w-full accent-slate-900"
-          />
-          <div className="flex items-center justify-between text-sm text-slate-600">
-            <span>${priceRange[0]}</span>
-            <span>${priceRange[1]}</span>
-          </div>
         </div>
       </div>
     </div>
@@ -112,4 +104,39 @@ export default function FilterSidebar({ mobileOpen, onClose }: FilterSidebarProp
       )}
     </>
   );
+}
+
+
+const CategoryFilterList = ({
+  id,
+  name,
+  slug,
+  productCount,
+  child
+}: CategoryFilter) => {
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <Link href={`/shop?category=${name}`} className="text-sm hover:underline">
+          {name}
+        </Link>
+        <p className="text-sm">{productCount}</p>
+      </div>
+      
+      {
+        child.length > 0 && (
+          <div className="ml-3">
+            {
+              child.map(category => (
+                <CategoryFilterList 
+                  key={category.id}
+                  {...category}
+                />
+              ))
+            }
+          </div>
+        )
+      }
+    </>
+  )
 }
