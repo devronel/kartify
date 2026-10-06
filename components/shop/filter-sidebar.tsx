@@ -117,7 +117,7 @@ const CategoryFilterList = ({
   return (
     <>
       <div className="flex items-center justify-between">
-        <Link href={`/shop?category=${name}`} className="text-sm hover:underline">
+        <Link href={`/shop?category=${slug}`} className="text-sm hover:underline">
           {name}
         </Link>
         <p className="text-sm">{productCount}</p>

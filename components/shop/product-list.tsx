@@ -38,6 +38,7 @@ export default function ProductList(){
   const [products, setProducts] = useState<Paginate<PublicProduct> | null>(null);
 
 
+  // Get all products
   const getProducts = async() => {
     try {
 
@@ -67,7 +68,7 @@ export default function ProductList(){
   }
 
 
-  // Get the products
+  // Get all products
   useEffect(() => {
     getProducts()
   }, [page, q, category])
