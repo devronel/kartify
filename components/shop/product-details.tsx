@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { moneyFormat } from "@/lib/helper";
 import { ProductAttribute } from "@/types/product";
@@ -9,7 +9,7 @@ import { Swiper as SwiperWrapper, SwiperSlide } from 'swiper/react';
 import { FreeMode, Thumbs } from 'swiper/modules';
 import { Swiper } from "swiper/types";
 import { Button } from "../ui/button";
-import { MinusIcon, PlusIcon } from "lucide-react";
+import { DatabaseCheck, LayersMinus, MinusIcon, PlusIcon, ShoppingCart } from "lucide-react";
 import { ButtonGroup } from "../ui/button-group";
 import { Input } from "../ui/input";
 
@@ -20,6 +20,10 @@ import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 
 import '@/app/swiper.css'
+import { CartItem } from "@/types/cart";
+import apiClient, { isAxiosError } from "@/lib/api-client";
+import { Spinner } from "../ui/spinner";
+import { toast } from "../ui/toast";
 
 interface Product {
   id: string;
@@ -40,7 +44,8 @@ type PublicProductVariant = {
   attributeValueIds: number[],
   sku: string,
   price: string,
-  inStock: boolean
+  inStock: boolean,
+  stockQuantity: number
 }
 
 type ProductDetailProps = {
@@ -83,12 +88,118 @@ export default function ProductDetail({
   price,
   comparePrice,
   hasVariant,
+  stockQuantity,
   images,
   variants,
   variantAttributes
 }: ProductDetailProps){
 
   const [thumbsSwiper, setThumbsSwiper] = useState<Swiper | null>(null);
+  const [isCartButtonDisable, setIsCartButtonDisabled] = useState<boolean>(true)
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
+  const [currentStockQuantity, setCurrentStockQuantity] = useState<number>(stockQuantity)
+  const [selectVariantAttribute, setSelectedVariantAttribute] = useState<Record<string, number>>({})
+  const [cartItem, setCartItem] = useState<CartItem>({
+    productId: id,
+    productVariantId: null,
+    quantity: 1
+  });
+
+  // Generate map for variants
+  const variantMap = useMemo(() => {
+    const map = new Map<string, PublicProductVariant>();
+
+    variants.forEach(variant => {
+      map.set(JSON.stringify(variant.attributeValueIds), { ...variant })
+    })
+
+    return map;
+  }, []);
+
+
+  // Handle selected variant
+  const handleSelectedVariant = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target
+    setSelectedVariantAttribute(prev => {
+      return { ...prev, [name]: Number(value) }
+    })
+  }
+
+
+  const getQuantity = (value: number) => {
+    if(value <= 0) return
+    setCartItem(prev => ({ ...prev, quantity: value }))
+  }
+
+  const incrementQuantity = () => {
+    setCartItem(prev => ({ ...prev, quantity: prev.quantity + 1 }))
+  }
+
+  const decrementQuantity = () => {
+    if(cartItem.quantity <= 1) return 
+    setCartItem(prev => ({ ...prev, quantity: prev.quantity - 1 }))
+  }
+
+
+  // Send product to cart
+  const addToCart = async() => {
+    try {
+      
+      setIsButtonLoading(true)
+
+      await apiClient.post("/api/cart", cartItem)
+
+      toast.add({
+        type: "success",
+        description: `Product Added to Cart Successfully.`,
+      })
+
+    } catch (error: unknown) {
+      
+      let description = "Failed to add product to cart.";
+
+      if (isAxiosError(error)) {
+        description = error.response?.data?.message ?? description;
+      }
+
+      toast.add({
+        type: "error",
+        description,
+        priority: "high",
+      });
+
+    } finally {
+      setIsButtonLoading(false)
+    }
+  }
+
+
+  // 
+  useEffect(() => {
+
+    const selectedVariantIds = Object.values(selectVariantAttribute).sort()
+    
+    if(variantMap.has(JSON.stringify(selectedVariantIds))){
+      
+      const variant = variantMap.get(JSON.stringify(selectedVariantIds))
+      
+      const stockQuantityCount = variant?.stockQuantity ?? 0;
+      
+      setCurrentStockQuantity(stockQuantityCount)
+    
+    }
+
+  }, [selectVariantAttribute])
+
+
+  // Disable & Enable Cart Button
+  useEffect(() => {
+    if(currentStockQuantity > 0){
+      setIsCartButtonDisabled(false)
+    }else{
+      setIsCartButtonDisabled(true)
+    }
+  }, [currentStockQuantity])
 
   return (
     <>
@@ -101,13 +212,13 @@ export default function ProductDetail({
           <span className="text-slate-900">{name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mb-10">
           <div>
             <SwiperWrapper
               style={{
                 '--swiper-navigation-color': '#fff',
                 '--swiper-pagination-color': '#fff',
-              }}
+              } as React.CSSProperties}
               spaceBetween={10}
               navigation={true}
               thumbs={{ swiper: thumbsSwiper }}
@@ -147,17 +258,6 @@ export default function ProductDetail({
 
           <div className="flex flex-col">
 
-            {/* <div className="flex items-center gap-2 mb-3">
-              {product.originalPrice && (
-                <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-medium text-white">
-                  Sale
-                </span>
-              )}
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                In Stock
-              </span>
-            </div> */}
-
             <h1 className="text-3xl font-bold text-slate-900">{name}</h1>
 
             <div className="mt-3 flex items-center gap-3">
@@ -195,7 +295,7 @@ export default function ProductDetail({
                   variantAttributes.map(attribute => {
                     return (
                       <div key={attribute.id} className="grid grid-cols-[100px_1fr]">
-                          <p>{attribute.name}</p>
+                          <p className="text-sm">{attribute.name}</p>
                           <div className="flex items-center gap-3">
                             {
                               attribute.values.map(attributeValue => {
@@ -204,6 +304,9 @@ export default function ProductDetail({
                                     <input
                                       type="radio"
                                       name={attribute.name}
+                                      checked={selectVariantAttribute[attribute.name] === attributeValue.id}
+                                      value={attributeValue.id}
+                                      onChange={handleSelectedVariant}
                                       id={attributeValue.productAttributeValueName}
                                       className="peer sr-only"
                                     />
@@ -232,70 +335,60 @@ export default function ProductDetail({
               {/* Variant attribute */}
 
               {/* Quantity */}
-              <div className="grid grid-cols-[100px_1fr]">
-                <p>Quantity</p>
-                <ButtonGroup
-                  orientation="horizontal"
-                  aria-label="Media controls"
-                  className="h-fit"
-                >
-                  <Button variant="outline" size="sm">
-                    <MinusIcon />
-                  </Button>
-                  <Input type="number" className="text-center w-24 h-8" />
-                  <Button variant="outline" size="sm">
-                    <PlusIcon />
-                  </Button>
-                </ButtonGroup>
+              <div className="flex flex-col gap-3">
+                <p className={`text-sm flex items-center gap-1 ${ currentStockQuantity > 0 ? 'text-primary' : 'text-red-400'}`}>
+                  { currentStockQuantity > 0 ? <DatabaseCheck className="size-4" /> : <LayersMinus className="size-4" /> }
+                  { currentStockQuantity > 0 ? "In Stock" : "Out of Stock" }
+                </p>
+                {
+                  currentStockQuantity > 0 && (
+                    <p className="text-sm">Only <span className="font-bold">{currentStockQuantity}</span> left in stock</p>
+                  )
+                }
+                <div className="grid grid-cols-[100px_1fr]">
+                  <p className="text-sm">Quantity</p>
+                  <ButtonGroup
+                    orientation="horizontal"
+                    aria-label="Media controls"
+                    className="h-fit"
+                  >
+                    <Button onClick={decrementQuantity} disabled={cartItem.quantity <= 1} variant="outline" size="sm">
+                      <MinusIcon />
+                    </Button>
+                    <Input 
+                      disabled
+                      value={cartItem.quantity} 
+                      onChange={(event) => getQuantity(Number(event.target.value))} 
+                      type="number" 
+                      className="text-center text-sm w-12 h-8"
+                    />
+                    <Button onClick={incrementQuantity} disabled={cartItem.quantity >= currentStockQuantity} variant="outline" size="sm">
+                      <PlusIcon />
+                    </Button>
+                  </ButtonGroup>
+                </div>
               </div>
               {/* Quantity */}
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <button className="flex-1 rounded bg-slate-900 py-3 px-6 text-sm font-semibold text-white hover:bg-slate-800 active:bg-slate-950 transition-colors">
+              <Button 
+                onClick={addToCart} 
+                size={'lg'} 
+                disabled={isCartButtonDisable || isButtonLoading} 
+                className={`w-full`}
+              >
+                { isButtonLoading ? <Spinner data-icon="inline-start" /> : <ShoppingCart className=" align-top" /> }
                 Add to Cart
-              </button>
-              <button className="rounded border border-slate-300 py-3 px-6 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mt-8 border-t border-slate-200 pt-6 space-y-4">
-              {[
-                {
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.15-.484 1.15-1.098v-1.5c0-.614-.529-1.098-1.15-1.098H18.75m-7.5-3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                    </svg>
-                  ),
-                  text: "Free shipping on orders over $50",
-                },
-                {
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-                    </svg>
-                  ),
-                  text: "30-day easy returns",
-                },
-                {
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                    </svg>
-                  ),
-                  text: "2-year warranty included",
-                },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                  <span className="text-slate-400">{item.icon}</span>
-                  {item.text}
-                </div>
-              ))}
+              </Button>
             </div>
           </div>
+        </div>
+
+        {/* Description */}
+        <div className="border-t py-4">
+          <h1 className="font-bold text-2xl mb-2">Description</h1>
+          <p>{description}</p>
         </div>
       </div>
     </>
