@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { CreditCard, Heart, MinusIcon, PlusIcon, Trash } from "lucide-react"
+import { CreditCard, Trash } from "lucide-react"
 import { Button } from "../ui/button"
-import { ButtonGroup } from "../ui/button-group"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
-import { Input } from "../ui/input"
 import { moneyFormat } from "@/lib/helper"
 import { Checkbox } from "../ui/checkbox"
 import { CartDetails, CartResponse } from "@/types/cart"
+import apiClient, { isAxiosError } from "@/lib/api-client"
+import { toast } from "../ui/toast"
+import { ValidationErrorResponse } from "@/types/api-error"
 
 
 type CartListProps = {
@@ -19,67 +20,141 @@ export default function CartList({ data }: CartListProps){
 
   const [cartItems, setCartItems] = useState<CartDetails[]>(data.items);
 
+  const getAllCartItems = async () => {
+    try {
+      
+      const response = await apiClient("/api/cart")
+
+      const items = response.data.items
+
+      setCartItems(items)
+
+    } catch (error: unknown) {
+      
+      let description = "Failed to add product to cart.";
+
+      if (isAxiosError(error)) {
+
+        const errorResponse = error.response?.data as ValidationErrorResponse
+        
+        description = errorResponse.message ?? description;
+
+      }
+
+      toast.add({
+        type: "error",
+        description,
+        priority: "high",
+      });
+
+    }
+  }
+
+  // Remove item from the cart
+  const removeItem = async (id: number) => {
+    try {
+      
+      await apiClient.delete(`/api/cart/items/${id}`)
+
+      toast.add({
+        type: "success",
+        description: `Item remove from the cart successfully.`,
+      })
+
+      getAllCartItems()
+
+    } catch (error: unknown) {
+
+      let description = "Failed to add product to cart.";
+
+      if (isAxiosError(error)) {
+
+        const errorResponse = error.response?.data as ValidationErrorResponse
+        
+        description = errorResponse.message ?? description;
+
+      }
+
+      toast.add({
+        type: "error",
+        description,
+        priority: "high",
+      });
+
+    }
+  }
+
+
   return (
     <>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">Shopping Cart</h1>
+        <p className="mt-1 text-slate-500">
+          {cartItems.length} items in your cart
+        </p>
+      </div>
+
       <div className="grid grid-cols-[1fr_400px] gap-5">
         
         {/* Item List */}
-        <div className="border rounded">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  <Checkbox />
-                </TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {
-                cartItems.map(item => {
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className=" align-top">
-                        <Checkbox />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex w-fit gap-4">
-                          <div className="w-20 h-20 rounded overflow-hidden">
-                            <img 
-                              src={item.imageUrl} 
-                              alt="" 
-                              className="w-full h-full"
-                            />
-                          </div>
-                          <div>
-                            <div className="flex flex-col gap-1">
-                              <h3 className="font-bold">{item.name}</h3>
-                              <p className="text-[12px]">&#8369;{moneyFormat.format(item.price)}</p>
-                              {
-                                item.productVariantId && (
-                                  <p className="text-[12px]">Red/Medium</p>
-                                )
-                              }
+        <div>
+          <div className="border rounded">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <Checkbox />
+                  </TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {
+                  cartItems.map(item => {
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className=" align-top">
+                          <Checkbox />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex w-fit gap-4">
+                            <div className="w-20 h-20 rounded overflow-hidden">
+                              <img 
+                                src={item.imageUrl} 
+                                alt="" 
+                                className="w-full h-full"
+                              />
                             </div>
-                            <div className="mt-3 flex items-center gap-2">
-                              <Button size="xs" variant="destructive">
-                                <Trash data-icon="inline-start" />
-                                Remove Item
-                              </Button>
+                            <div>
+                              <div className="flex flex-col gap-1">
+                                <h3 className="font-bold">{item.name}</h3>
+                                <p className="text-[12px]">&#8369;{moneyFormat.format(item.price)}</p>
+                                {
+                                  item.productVariantId && (
+                                    <p className="text-[12px]">Red/Medium</p>
+                                  )
+                                }
+                              </div>
+                              <div className="mt-3 flex items-center gap-2">
+                                <Button onClick={() => removeItem(item.id)} size="xs" variant="destructive">
+                                  <Trash data-icon="inline-start" />
+                                  Remove Item
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>&#8369;{moneyFormat.format(item.subtotal)}</TableCell>
-                    </TableRow>
-                  )
-                })
-              }
-            </TableBody>
-          </Table>
+                        </TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>&#8369;{moneyFormat.format(item.subtotal)}</TableCell>
+                      </TableRow>
+                    )
+                  })
+                }
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         {/* Checkout */}

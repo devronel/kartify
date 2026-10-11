@@ -24,6 +24,8 @@ import { CartItem } from "@/types/cart";
 import apiClient, { isAxiosError } from "@/lib/api-client";
 import { Spinner } from "../ui/spinner";
 import { toast } from "../ui/toast";
+import { ValidationErrorResponse } from "@/types/api-error";
+import { FieldError } from "../ui/field";
 
 interface Product {
   id: string;
@@ -99,11 +101,13 @@ export default function ProductDetail({
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
   const [currentStockQuantity, setCurrentStockQuantity] = useState<number>(stockQuantity)
   const [selectVariantAttribute, setSelectedVariantAttribute] = useState<Record<string, number>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [cartItem, setCartItem] = useState<CartItem>({
     productId: id,
     productVariantId: null,
     quantity: 1
   });
+
 
   // Generate map for variants
   const variantMap = useMemo(() => {
@@ -131,9 +135,11 @@ export default function ProductDetail({
     setCartItem(prev => ({ ...prev, quantity: value }))
   }
 
+
   const incrementQuantity = () => {
     setCartItem(prev => ({ ...prev, quantity: prev.quantity + 1 }))
   }
+
 
   const decrementQuantity = () => {
     if(cartItem.quantity <= 1) return 
@@ -142,12 +148,15 @@ export default function ProductDetail({
 
 
   // Send product to cart
-  const addToCart = async() => {
+  const addToCart = async () => {
     try {
       
       setIsButtonLoading(true)
 
       await apiClient.post("/api/cart", cartItem)
+
+      // Reset the error
+      setErrors({})
 
       toast.add({
         type: "success",
@@ -159,7 +168,18 @@ export default function ProductDetail({
       let description = "Failed to add product to cart.";
 
       if (isAxiosError(error)) {
-        description = error.response?.data?.message ?? description;
+
+        const errorResponse = error.response?.data as ValidationErrorResponse
+        
+        switch (error.status) {
+          case 422:
+            setErrors(errorResponse.errors)
+            return
+          default:
+            description = errorResponse.message ?? description;
+            break;
+        }
+
       }
 
       toast.add({
@@ -184,6 +204,14 @@ export default function ProductDetail({
       const variant = variantMap.get(JSON.stringify(selectedVariantIds))
       
       const stockQuantityCount = variant?.stockQuantity ?? 0;
+
+      setCartItem(prev => {
+
+        if(!variant) return prev
+
+        return { ...prev, productVariantId: variant?.id }
+
+      })
       
       setCurrentStockQuantity(stockQuantityCount)
     
@@ -194,11 +222,12 @@ export default function ProductDetail({
 
   // Disable & Enable Cart Button
   useEffect(() => {
-    if(currentStockQuantity > 0){
-      setIsCartButtonDisabled(false)
-    }else{
-      setIsCartButtonDisabled(true)
-    }
+
+    const noStock = currentStockQuantity <= 0
+    const variantNotSelected = (hasVariant && !(Object.values(selectVariantAttribute).length > 0))
+
+    setIsCartButtonDisabled(noStock || variantNotSelected)
+
   }, [currentStockQuantity])
 
   return (
@@ -332,6 +361,7 @@ export default function ProductDetail({
                   })
                 }
               </div>
+              { errors.productVariantId && <FieldError>{errors.productVariantId}</FieldError> }
               {/* Variant attribute */}
 
               {/* Quantity */}

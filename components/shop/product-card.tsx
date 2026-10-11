@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ShoppingBasketIcon, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import apiClient from "@/lib/api-client";
+import { toast } from "../ui/toast";
+import { isAxiosError } from "axios";
+import { useRouter } from "next/navigation";
+import { Spinner } from "../ui/spinner";
 
 type PublicProductProps = {
   id: number,
@@ -35,6 +41,52 @@ export default function ProductCard({
   hasVariant,
   primaryImage
 }: PublicProductProps) {
+
+  const router = useRouter()
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
+
+  // Add to Cart
+  const addToCart = async () => {
+
+    if(hasVariant){
+      router.push(`/shop/${slug}`)
+      return
+    }
+    
+    try {
+      
+      setIsButtonLoading(true)
+
+      await apiClient.post("/api/cart", {
+        productId: id,
+        productVariantId: null,
+        quantity: 1
+      })
+
+      toast.add({
+        type: "success",
+        description: `Product Added to Cart Successfully.`,
+      })
+
+    } catch (error: unknown) {
+      
+      let description = "Failed to add product to cart.";
+
+      if (isAxiosError(error)) {
+        description = error.response?.data?.message ?? description;
+      }
+
+      toast.add({
+        type: "error",
+        description,
+        priority: "high",
+      });
+
+    } finally {
+      setIsButtonLoading(false)
+    }
+  }
+
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300">
       <div className="relative aspect-square rounded-xl bg-slate-100 mb-4 overflow-hidden flex items-center justify-center">
@@ -47,8 +99,10 @@ export default function ProductCard({
           <p className="text-xs text-slate-400 line-through">${comparePrice.toFixed(2)}</p>
         )}
       </div>
+      <p className="text-sm line-clamp-2">{shortDescription}</p>
       <div className="flex gap-2 mt-2">
-        <Button size={'sm'} className="flex-1 cursor-pointer gap-2 transition-all hover:bg-primary/80 active:scale-95">
+        <Button onClick={addToCart} disabled={isButtonLoading} className="flex-1 cursor-pointer gap-2 transition-all hover:bg-primary/80 active:scale-95">
+          { isButtonLoading ? <Spinner data-icon="inline-start" /> : <ShoppingCart className="align-top" /> }
           Add to Cart
         </Button>
         <Button
