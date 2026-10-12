@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { CreditCard, Trash } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { CreditCard, MinusIcon, PlusIcon, Trash } from "lucide-react"
 import { Button } from "../ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { moneyFormat } from "@/lib/helper"
@@ -10,6 +10,9 @@ import { CartDetails, CartResponse } from "@/types/cart"
 import apiClient, { isAxiosError } from "@/lib/api-client"
 import { toast } from "../ui/toast"
 import { ValidationErrorResponse } from "@/types/api-error"
+import { Input } from "../ui/input"
+import useDebounce from "@/hooks/use-debounce"
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group"
 
 
 type CartListProps = {
@@ -85,6 +88,72 @@ export default function CartList({ data }: CartListProps){
   }
 
 
+  // Update Quantity
+  const updateQuantity = useCallback(
+    async (id: number, quantity: number) => {
+
+      const backupItem = cartItems.find(item => item.id === id);
+
+      try {
+
+        const response = await apiClient.patch(`/api/cart/items/${id}`, { 
+          quantity 
+        });
+
+        const updatedItem = response.data;
+
+        // Sync with the server response
+        setCartItems(prev =>
+          prev.map(item =>
+            item.id === updatedItem.id
+              ? {
+                  ...item,
+                  quantity: updatedItem.quantity,
+                  subtotal: updatedItem.subtotal,
+                }
+              : item
+          )
+        );
+
+        return true
+
+      } catch (error: unknown) {
+        
+        let description = "Failed to update item quantity.";
+
+        if (isAxiosError(error)) {
+
+          const errorResponse = error.response?.data as ValidationErrorResponse
+          
+          description = errorResponse.message ?? description;
+
+        }
+
+        toast.add({
+          type: "error",
+          description,
+          priority: "high",
+        });
+
+        setCartItems(prev => {
+          return prev.map(item =>
+            item.id === backupItem?.id
+              ? {
+                  ...item,
+                  quantity: backupItem?.quantity,
+                  subtotal: backupItem?.subtotal
+                }
+              : item
+          )
+        });
+
+        return false
+
+      }
+    },
+    [setCartItems]
+  )
+
   return (
     <>
       <div className="mb-8">
@@ -146,7 +215,13 @@ export default function CartList({ data }: CartListProps){
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>
+                           <CartQuantityInput
+                            id={item.id}
+                            quantity={item.quantity}
+                            onUpdate={updateQuantity}
+                          />
+                        </TableCell>
                         <TableCell>&#8369;{moneyFormat.format(item.subtotal)}</TableCell>
                       </TableRow>
                     )
@@ -194,4 +269,85 @@ export default function CartList({ data }: CartListProps){
       </div>
     </>
   )
+}
+
+// Stock Quantity Input
+type CartQuantityInputProps = {
+  id: number;
+  quantity: number;
+  onUpdate: (id: number, quantity: number) => Promise<boolean>;
+};
+
+const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) => {
+  
+  const [value, setValue] = useState(quantity);
+  const debouncedValue = useDebounce(value, 500);
+
+
+  const increment = () => {
+
+    setValue(prev => prev + 1)
+  
+  }
+
+
+  const decrement = () => {
+
+    if(value <= 1) return
+
+    setValue(prev => prev = prev - 1)
+
+  }
+
+
+  // Sync when the server-provided quantity changes.
+  useEffect(() => {
+    setValue(quantity);
+  }, [quantity]);
+
+
+  // Notify the parent after the user stops changing the input
+  useEffect(() => {
+
+    if (debouncedValue === quantity) return;
+
+    let cancelled = false;
+
+    const save = async () => {
+
+      const success = await onUpdate(id, debouncedValue);
+
+      if (!success && !cancelled) {
+        setValue(quantity);
+      }
+
+    };
+
+    void save();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, debouncedValue, quantity, onUpdate]);
+
+
+  return (
+    <InputGroup className="text-sm text-center w-30 h-7.5">
+      <InputGroupInput 
+        type="number"
+        min={1}
+        className="text-center"
+        value={value}
+        onChange={(event) => {
+          setValue(Number(event.target.value));
+        }}
+      />
+      <InputGroupAddon align="inline-start">
+        <InputGroupButton onClick={decrement} variant="secondary"><MinusIcon /></InputGroupButton>
+      </InputGroupAddon>
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton onClick={increment} variant="secondary"><PlusIcon /></InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
+  );
 }

@@ -392,7 +392,7 @@ export default function ProductDetail({
                       type="number" 
                       className="text-center text-sm w-12 h-8"
                     />
-                    <Button onClick={incrementQuantity} disabled={cartItem.quantity >= currentStockQuantity} variant="outline" size="sm">
+                    <Button onClick={incrementQuantity} disabled={cartItem.quantity >= currentStockQuantity || isCartButtonDisable} variant="outline" size="sm">
                       <PlusIcon />
                     </Button>
                   </ButtonGroup>
