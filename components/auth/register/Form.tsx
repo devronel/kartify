@@ -12,14 +12,7 @@ import { isAxiosError } from "@/lib/api-client";
 import { ValidationErrorResponse } from "@/types/api-error";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
-type UserData = {
-  firstName: string,
-  lastName: string,
-  email: string,
-  password: string,
-  confirmPassword: string
-}
+import { RegisterRequest } from "@/types/auth";
 
 type ValidationError = Record<string, string>
 
@@ -29,7 +22,7 @@ export default function Form() {
     const [errors, setErrors] = useState<ValidationError>({});
     const [agreed, setAgreed] = useState<boolean>(false)
     const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
-    const [data, setData] = useState<UserData>({
+    const [data, setData] = useState<RegisterRequest>({
       firstName: '',
       lastName: '',
       email: '',

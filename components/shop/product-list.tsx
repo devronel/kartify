@@ -8,6 +8,7 @@ import { Paginate } from "@/types/paginate";
 import CustomPagination from "../shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "../ui/toast";
+import LoginModal from "../auth/login/modal";
 
 type PublicProduct = {
   id: number,

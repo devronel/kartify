@@ -28,7 +28,7 @@ export default function Shop() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Shop All Collections</h1>
-          <p className="mt-1 text-slate-500">Browse Nova Store's full collection of premium apparel, luxury accessories, and smart tech.</p>
+          <p className="mt-1 text-slate-500">Browse Kartify's Store full collection of premium apparel, accessories, and smart tech.</p>
         </div>
 
         <ProductList />

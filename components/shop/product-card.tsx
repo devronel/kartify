@@ -7,6 +7,8 @@ import { toast } from "../ui/toast";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { Spinner } from "../ui/spinner";
+import LoginModal from "../auth/login/modal";
+import { useCart } from "@/context/CartContext";
 
 type PublicProductProps = {
   id: number,
@@ -43,6 +45,8 @@ export default function ProductCard({
 }: PublicProductProps) {
 
   const router = useRouter()
+  const { setCartCount } = useCart();
+  const [openLoginModal, setOpenLoginModal] = useState(false)
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
 
   // Add to Cart
@@ -68,12 +72,23 @@ export default function ProductCard({
         description: `Product Added to Cart Successfully.`,
       })
 
+      setCartCount(prev => prev + 1)
+
     } catch (error: unknown) {
       
       let description = "Failed to add product to cart.";
 
       if (isAxiosError(error)) {
-        description = error.response?.data?.message ?? description;
+        
+        switch (error.status) {
+          case 403:
+            setOpenLoginModal(true)
+            return
+          default:
+            description = error.response?.data?.message ?? description;
+            break;
+        }
+
       }
 
       toast.add({
@@ -115,6 +130,12 @@ export default function ProductCard({
           </Link>
         </Button>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal 
+        open={openLoginModal}
+        onClose={() => setOpenLoginModal(false)}
+      />
     </div>
   );
 }

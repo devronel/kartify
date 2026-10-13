@@ -1,4 +1,6 @@
 import NavBar from "@/components/shared/navbar";
+import { CartProvider } from "@/context/CartContext";
+import { apiServer } from "@/lib/api-server";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,11 +11,24 @@ export const metadata: Metadata = {
   description: "Shop quality products at Kartify.",
 };
 
-export default function HomeLayout({ children }: { children: React.ReactNode }) {
+export default async function HomeLayout({ children }: { children: React.ReactNode }) {
+
+  let cartItemCount = 0
+
+  try {
+    const response = await apiServer('/api/cart/items/count')
+    cartItemCount = response.data  
+  } catch (error) {
+    cartItemCount = 0
+  }
+
+
   return (
-    <section>
-        <NavBar />
-        {children}
-    </section>
+    <CartProvider cartItemCount={cartItemCount}>
+      <section>
+          <NavBar />
+          {children}
+      </section>
+    </CartProvider>
   )
 }

@@ -4,60 +4,20 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import apiClient, { ensureCsrfCookie } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
+import { AuthContextType, AuthResponse, RegisterRequest, User } from "@/types/auth";
+import { useCart } from "./CartContext";
 
-interface User {
-  id: number;
-  fullName: string;
-  email: string;
-  profilePictureUrl: string;
-  role: "CUSTOMER" | "ADMIN";
+
+type AuthProviderProps = {
+    children: ReactNode,
+    authUser: User | null
 }
 
-interface AuthContextType {
-    user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>,
-    loading: boolean;
-    authenticate: (email: string, password: string) => Promise<AuthResponse>;
-    register: (data: RegisterData) => Promise<AuthResponse>;
-    logout: () => Promise<void>;
-}
+const AuthContext = createContext<AuthContextType | null>(null);
 
-interface RegisterData {
-    firstName: string
-    lastName: string
-    email: string
-    password: string
-    confirmPassword: string
-}
-
-interface AuthResponse {
-  success: boolean,
-  message: string,
-  payload: User
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children, authUser }: AuthProviderProps) {
+    const [user, setUser] = useState<User | null>(authUser);
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    // --- Get authenticated user ---
-    async function checkAuth() {
-        try {
-            const response = await apiClient.get("/api/user");
-            setUser(response.data.payload);
-        } catch {
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     // --- Login user ---
     async function authenticate(email: string, password: string): Promise<AuthResponse> {
@@ -74,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // --- Register new user ---
-    async function register(data: RegisterData) {
+    async function register(data: RegisterRequest) {
 
         await ensureCsrfCookie();
         const response = await apiClient.post("/api/register", data, {
@@ -104,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, authenticate, register, logout }}>
+        <AuthContext.Provider value={{ user, setUser, authenticate, register, logout }}>
             {children}
         </AuthContext.Provider>
     );

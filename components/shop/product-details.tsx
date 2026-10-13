@@ -26,6 +26,8 @@ import { Spinner } from "../ui/spinner";
 import { toast } from "../ui/toast";
 import { ValidationErrorResponse } from "@/types/api-error";
 import { FieldError } from "../ui/field";
+import LoginModal from "../auth/login/modal";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   id: string;
@@ -96,7 +98,9 @@ export default function ProductDetail({
   variantAttributes
 }: ProductDetailProps){
 
+  const { setCartCount } = useCart()
   const [thumbsSwiper, setThumbsSwiper] = useState<Swiper | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCartButtonDisable, setIsCartButtonDisabled] = useState<boolean>(true)
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false)
   const [currentStockQuantity, setCurrentStockQuantity] = useState<number>(stockQuantity)
@@ -158,6 +162,8 @@ export default function ProductDetail({
       // Reset the error
       setErrors({})
 
+      setCartCount(prev => prev + cartItem.quantity)
+
       toast.add({
         type: "success",
         description: `Product Added to Cart Successfully.`,
@@ -172,6 +178,9 @@ export default function ProductDetail({
         const errorResponse = error.response?.data as ValidationErrorResponse
         
         switch (error.status) {
+          case 403:
+            setIsLoginModalOpen(true)
+            return
           case 422:
             setErrors(errorResponse.errors)
             return
@@ -421,6 +430,11 @@ export default function ProductDetail({
           <p>{description}</p>
         </div>
       </div>
+
+      <LoginModal 
+        open={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
     </>
   )
 }

@@ -13,6 +13,7 @@ import { ValidationErrorResponse } from "@/types/api-error"
 import { Input } from "../ui/input"
 import useDebounce from "@/hooks/use-debounce"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group"
+import { useCart } from "@/context/CartContext"
 
 
 type CartListProps = {
@@ -21,6 +22,7 @@ type CartListProps = {
 
 export default function CartList({ data }: CartListProps){
 
+  const { setCartCount } = useCart()
   const [cartItems, setCartItems] = useState<CartDetails[]>(data.items);
 
   const getAllCartItems = async () => {
@@ -53,8 +55,9 @@ export default function CartList({ data }: CartListProps){
     }
   }
 
+  
   // Remove item from the cart
-  const removeItem = async (id: number) => {
+  const removeItem = async (id: number, quantity: number) => {
     try {
       
       await apiClient.delete(`/api/cart/items/${id}`)
@@ -65,6 +68,8 @@ export default function CartList({ data }: CartListProps){
       })
 
       getAllCartItems()
+
+      setCartCount(prev => prev - quantity)
 
     } catch (error: unknown) {
 
@@ -91,7 +96,7 @@ export default function CartList({ data }: CartListProps){
   // Update Quantity
   const updateQuantity = useCallback(
     async (id: number, quantity: number) => {
-
+ 
       const backupItem = cartItems.find(item => item.id === id);
 
       try {
@@ -102,15 +107,10 @@ export default function CartList({ data }: CartListProps){
 
         const updatedItem = response.data;
 
-        // Sync with the server response
-        setCartItems(prev =>
-          prev.map(item =>
-            item.id === updatedItem.id
-              ? {
-                  ...item,
-                  quantity: updatedItem.quantity,
-                  subtotal: updatedItem.subtotal,
-                }
+        setCartItems(prev => 
+          prev.map(item => 
+            item.id === id
+              ? { ...item, quantity: updatedItem.quantity, subtotal: updatedItem.subtotal }
               : item
           )
         );
@@ -134,18 +134,14 @@ export default function CartList({ data }: CartListProps){
           description,
           priority: "high",
         });
-
-        setCartItems(prev => {
-          return prev.map(item =>
+              
+        setCartItems(prev => 
+          prev.map(item => 
             item.id === backupItem?.id
-              ? {
-                  ...item,
-                  quantity: backupItem?.quantity,
-                  subtotal: backupItem?.subtotal
-                }
+              ? { ...item, quantity: backupItem?.quantity, subtotal: backupItem?.subtotal }
               : item
           )
-        });
+        )
 
         return false
 
@@ -153,6 +149,11 @@ export default function CartList({ data }: CartListProps){
     },
     [setCartItems]
   )
+
+
+  useEffect(() => {
+    setCartCount(cartItems.reduce((accumulator, currentValue) => accumulator + currentValue.quantity, 0));
+  }, [cartItems])
 
   return (
     <>
@@ -207,7 +208,7 @@ export default function CartList({ data }: CartListProps){
                                 }
                               </div>
                               <div className="mt-3 flex items-center gap-2">
-                                <Button onClick={() => removeItem(item.id)} size="xs" variant="destructive">
+                                <Button onClick={() => removeItem(item.id, item.quantity)} size="xs" variant="destructive">
                                   <Trash data-icon="inline-start" />
                                   Remove Item
                                 </Button>
@@ -302,7 +303,9 @@ const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) 
 
   // Sync when the server-provided quantity changes.
   useEffect(() => {
+
     setValue(quantity);
+
   }, [quantity]);
 
 
