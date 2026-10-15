@@ -6,13 +6,16 @@ export type CartDetails = {
   name: string,
   price: number,
   quantity: number,
-  subtotal: number
+  subtotal: number,
+  availableStock: number,
+  isAvailable: boolean
 }
 
 export type CartResponse = {
   items: CartDetails[],
   subtotal: number,
-  totalQuantity: number
+  totalQuantity: number,
+  hasUnavailableItems: boolean
 }
 
 export type CartItem = {

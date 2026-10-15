@@ -13,18 +13,16 @@ export const metadata: Metadata = {
 
 export default async function HomeLayout({ children }: { children: React.ReactNode }) {
 
-  let cartItemCount = 0
+  const [itemCount, crt] = await Promise.allSettled([
+    apiServer('/api/cart/items/count'),
+    apiServer('/api/cart')
+  ]);
 
-  try {
-    const response = await apiServer('/api/cart/items/count')
-    cartItemCount = response.data  
-  } catch (error) {
-    cartItemCount = 0
-  }
-
+  const cartItemCount = itemCount.status === 'fulfilled' ? itemCount.value.data : 0
+  const cart = crt.status === 'fulfilled' ? crt.value.data : null
 
   return (
-    <CartProvider cartItemCount={cartItemCount}>
+    <CartProvider cartItemCount={cartItemCount} cart={cart}>
       <section>
           <NavBar />
           {children}

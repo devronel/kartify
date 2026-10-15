@@ -35,6 +35,17 @@ export default function NavBar() {
 
   }, []);
 
+
+  const logoutAccount = async () => {
+
+    const res = await logout()
+
+    if(res){
+      setProfileOpen(false)
+    }
+
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -88,9 +99,9 @@ export default function NavBar() {
             </Link>
 
             <Link
-              href="/cart"
-              className={`${pathname.startsWith("/cart") ? "bg-slate-100" : ""} relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors`}
-            >
+                href="/cart"
+                className={`${pathname.startsWith("/cart") ? "bg-slate-100" : ""} relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors`}
+              >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
               </svg>
@@ -118,9 +129,9 @@ export default function NavBar() {
                   <ChevronDown className="hidden lg:block w-4 h-4 text-slate-400" />
                 </button>
 
-                {profileOpen && (
-                  <>
-                    <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                {
+                  profileOpen && (
+                    <div className={`absolute right-0 top-full mt-1 z-40 w-56 rounded-xl border border-slate-200 bg-white p-1 shadow-lg`}>
                       <div className="px-3 py-2">
                         <p className="text-sm font-medium text-slate-900 truncate">{user.fullName}</p>
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
@@ -136,15 +147,16 @@ export default function NavBar() {
                       </Link>
                       <div className="my-1 border-t border-slate-100" />
                       <button
-                        onClick={logout}
+                        onClick={logoutAccount}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
                       </button>
                     </div>
-                  </>
-                )}
+                  )
+                }
+
               </div>
             ) : (
               <Link

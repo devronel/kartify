@@ -1,59 +1,22 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { CreditCard, MinusIcon, PlusIcon, Trash } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { ArrowRight, MinusIcon, PlusIcon, Trash } from "lucide-react"
 import { Button } from "../ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { moneyFormat } from "@/lib/helper"
-import { Checkbox } from "../ui/checkbox"
-import { CartDetails, CartResponse } from "@/types/cart"
 import apiClient, { isAxiosError } from "@/lib/api-client"
 import { toast } from "../ui/toast"
 import { ValidationErrorResponse } from "@/types/api-error"
-import { Input } from "../ui/input"
 import useDebounce from "@/hooks/use-debounce"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group"
 import { useCart } from "@/context/CartContext"
 
 
-type CartListProps = {
-  data: CartResponse
-}
+export default function CartList(){
 
-export default function CartList({ data }: CartListProps){
-
-  const { setCartCount } = useCart()
-  const [cartItems, setCartItems] = useState<CartDetails[]>(data.items);
-
-  const getAllCartItems = async () => {
-    try {
-      
-      const response = await apiClient("/api/cart")
-
-      const items = response.data.items
-
-      setCartItems(items)
-
-    } catch (error: unknown) {
-      
-      let description = "Failed to add product to cart.";
-
-      if (isAxiosError(error)) {
-
-        const errorResponse = error.response?.data as ValidationErrorResponse
-        
-        description = errorResponse.message ?? description;
-
-      }
-
-      toast.add({
-        type: "error",
-        description,
-        priority: "high",
-      });
-
-    }
-  }
+  const { setCartCount, cartItems, setCartItems, getCartItems, hasUnavailableItems } = useCart()
+  const [selectItems, setSelectItems] = useState<number[]>([])
 
   
   // Remove item from the cart
@@ -67,7 +30,7 @@ export default function CartList({ data }: CartListProps){
         description: `Item remove from the cart successfully.`,
       })
 
-      getAllCartItems()
+      getCartItems()
 
       setCartCount(prev => prev - quantity)
 
@@ -96,8 +59,6 @@ export default function CartList({ data }: CartListProps){
   // Update Quantity
   const updateQuantity = useCallback(
     async (id: number, quantity: number) => {
- 
-      const backupItem = cartItems.find(item => item.id === id);
 
       try {
 
@@ -110,7 +71,13 @@ export default function CartList({ data }: CartListProps){
         setCartItems(prev => 
           prev.map(item => 
             item.id === id
-              ? { ...item, quantity: updatedItem.quantity, subtotal: updatedItem.subtotal }
+              ? { 
+                  ...item, 
+                  quantity: updatedItem.quantity, 
+                  subtotal: updatedItem.subtotal, 
+                  availableStock: updatedItem.availableStock,
+                  isAvailable: updatedItem.isAvailable 
+                }
               : item
           )
         );
@@ -134,11 +101,19 @@ export default function CartList({ data }: CartListProps){
           description,
           priority: "high",
         });
-              
+     
+        const backupItem = cartItems.find(item => item.id === id);
+        
         setCartItems(prev => 
           prev.map(item => 
             item.id === backupItem?.id
-              ? { ...item, quantity: backupItem?.quantity, subtotal: backupItem?.subtotal }
+              ? { 
+                  ...item, 
+                  quantity: backupItem?.quantity, 
+                  subtotal: backupItem?.subtotal,
+                  availableStock: backupItem?.availableStock,
+                  isAvailable: backupItem?.isAvailable  
+                }
               : item
           )
         )
@@ -151,10 +126,38 @@ export default function CartList({ data }: CartListProps){
   )
 
 
+  const checkout = () => {
+    console.log(selectItems)
+  }
+
+
+  const subtotal = useMemo(() => {
+
+    const matchData = cartItems.filter(item => selectItems.includes(item.id))
+
+    return matchData.reduce((accumulater, currentValue) => {
+      return accumulater + currentValue.subtotal
+    }, 0)
+
+  }, [selectItems])
+
+
   useEffect(() => {
     setCartCount(cartItems.reduce((accumulator, currentValue) => accumulator + currentValue.quantity, 0));
   }, [cartItems])
 
+
+  useEffect(() => {
+    const cartItemsIds = cartItems.map(item => item.id)
+    setSelectItems(cartItemsIds)
+  }, [cartItems])
+
+
+  useEffect(() => {
+    getCartItems()
+  }, []);
+
+  
   return (
     <>
       <div className="mb-8">
@@ -172,9 +175,6 @@ export default function CartList({ data }: CartListProps){
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    <Checkbox />
-                  </TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Amount</TableHead>
@@ -185,9 +185,6 @@ export default function CartList({ data }: CartListProps){
                   cartItems.map(item => {
                     return (
                       <TableRow key={item.id}>
-                        <TableCell className=" align-top">
-                          <Checkbox />
-                        </TableCell>
                         <TableCell>
                           <div className="flex w-fit gap-4">
                             <div className="w-20 h-20 rounded overflow-hidden">
@@ -203,10 +200,23 @@ export default function CartList({ data }: CartListProps){
                                 <p className="text-[12px]">&#8369;{moneyFormat.format(item.price)}</p>
                                 {
                                   item.productVariantId && (
-                                    <p className="text-[12px]">Red/Medium</p>
+                                    <p className="text-[12px]">Variant</p>
                                   )
                                 }
                               </div>
+                              {
+                                !item.isAvailable && (
+                                  item.availableStock <= 0 ? (
+                                    <p className="mt-3 text-xs font-semibold text-destructive">
+                                      Out of stock
+                                    </p>
+                                  ) : (
+                                    <p className="mt-3 text-xs font-semibold text-amber-600">
+                                      Only {item.availableStock} left. Please reduce the quantity.
+                                    </p>
+                                  )
+                                )
+                              }
                               <div className="mt-3 flex items-center gap-2">
                                 <Button onClick={() => removeItem(item.id, item.quantity)} size="xs" variant="destructive">
                                   <Trash data-icon="inline-start" />
@@ -242,27 +252,20 @@ export default function CartList({ data }: CartListProps){
             <div className="px-2 py-4 flex flex-col gap-2 border-b">
               <div className="flex items-center justify-between">
                 <p>Items selected</p>
-                <p>2</p>
+                <p>{selectItems.length}</p>
               </div>
               <div className="flex items-center justify-between">
                 <p>Subtotal</p>
-                <p>&#8369;2,999</p>
+                <p>&#8369;{moneyFormat.format(subtotal)}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p>Shipping Costs:</p>
-                <p>Free</p>
-              </div>
-            </div>
-            <div className="px-2 py-4 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <p>Total</p>
-                <p>&#8369;2,999</p>
+                <p>Shipping and taxes are calculated at checkout.</p>
               </div>
             </div>
             <div className="p-2 flex flex-col gap-2">
-              <Button size={"lg"}>
-                <CreditCard data-icon="inline-start" />
-                Checkout
+              <Button onClick={checkout} disabled={hasUnavailableItems} size={"lg"}>
+                Proceed to Checkout
+                <ArrowRight data-icon="inline-end" />
               </Button>
             </div>
           </div>
@@ -314,6 +317,9 @@ const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) 
 
     if (debouncedValue === quantity) return;
 
+    console.log("Quantity: " + quantity)
+    console.log("Debounce: " + debouncedValue)
+
     let cancelled = false;
 
     const save = async () => {
@@ -331,7 +337,7 @@ const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) 
     return () => {
       cancelled = true;
     };
-  }, [id, debouncedValue, quantity, onUpdate]);
+  }, [id, debouncedValue, onUpdate]);
 
 
   return (

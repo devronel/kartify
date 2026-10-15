@@ -42,52 +42,54 @@ export default function Form() {
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const handleSubmit = async (e: React.SubmitEvent) => {
-      e.preventDefault();
-      try {
-        setIsButtonLoading(true)
+      
+    e.preventDefault();
+    
+    try {
 
-        const response = await authenticate(data.email, data.password);
+      setIsButtonLoading(true)
 
-        if(response.success){
-          setData({
-            email: '',
-            password: '',
-          })
-          setErrors({})
-          setIsButtonLoading(false)
-          router.push(callbackUrl);
-          router.refresh();
-        }
-      } catch (err) {
-        if(err instanceof Error){
-          if(!isAxiosError(err)){
-            toast.add({
-              type: "error",
-              description: "Something's wrong, Please try again.",
-              priority: "high",
-            })
-            return
-          }
-  
-          switch (err.status) {
-            case 422:
-            case 500:
-              setErrors({
-                email: "Invalid credentials"
-              })
-              break;
-            default:
-              toast.add({
-                type: "error",
-                description: "Something's wrong, Please try again.",
-                priority: "high",
-              })
-              break;
-          }
+      await authenticate(data.email, data.password);
 
-        }
-        setIsButtonLoading(false)
+      setData({
+        email: '',
+        password: '',
+      })
+      setErrors({})
+      setIsButtonLoading(false)
+      router.push(callbackUrl);
+      router.refresh();
+
+    } catch (err: unknown) {
+      
+      if(!isAxiosError(err)){
+        toast.add({
+          type: "error",
+          description: "Something's wrong, Please try again.",
+          priority: "high",
+        })
+        return
       }
+
+      switch (err.status) {
+        case 422:
+        case 500:
+          setErrors({
+            email: "Invalid credentials"
+          })
+          break;
+        default:
+          toast.add({
+            type: "error",
+            description: "Something's wrong, Please try again.",
+            priority: "high",
+          })
+          break;
+      }
+
+      setIsButtonLoading(false)
+    }
+    
   };
 
   return (

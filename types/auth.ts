@@ -11,7 +11,7 @@ export type AuthContextType = {
   setUser: React.Dispatch<React.SetStateAction<User | null>>,
   authenticate: (email: string, password: string) => Promise<AuthResponse>;
   register: (data: RegisterRequest) => Promise<AuthResponse>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
 }
 
 export type RegisterRequest = {

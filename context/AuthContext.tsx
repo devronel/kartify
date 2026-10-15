@@ -54,12 +54,16 @@ export function AuthProvider({ children, authUser }: AuthProviderProps) {
             setUser(null)
             router.push("/");
             router.refresh();
+
+            return true
         } catch (error) {
             toast.add({
                 type: "error",
                 description: "Something's wrong, Please try again.",
                 priority: "high",
             })
+
+            return false
         }
     }
 

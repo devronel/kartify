@@ -8,6 +8,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+
   if (!isProtected) {
     return NextResponse.next();
   }
@@ -28,17 +29,21 @@ export async function proxy(request: NextRequest) {
       },
     });
 
-    if (response.status === 401) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
+    
     if (!response.ok) {
+      
+      if (response.status === 401 || response.status === 403) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
       return NextResponse.redirect(new URL('/error?type=auth_down', request.url));
+    
     }
 
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
+    
     if (isAdminRoute) {
       const user = await response.json();
       if (user.payload.role !== 'ADMIN') {
@@ -47,6 +52,7 @@ export async function proxy(request: NextRequest) {
     }
 
     return NextResponse.next();
+    
   } catch (error) {
     console.error('Auth verification failed:', error);
     return NextResponse.redirect(new URL('/error?type=auth_down', request.url));
@@ -54,5 +60,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/admin/:path*'],
+  matcher: ['/profile/:path*', '/admin/:path*', '/cart/:path*'],
 };

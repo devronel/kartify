@@ -245,7 +245,7 @@ export default function ProductDetail({
         <nav className="mb-8 text-sm text-slate-500">
           <Link href="/" className="hover:text-slate-900">Home</Link>
           <span className="mx-2">/</span>
-          <Link href="/products" className="hover:text-slate-900">Products</Link>
+          <Link href="/shop" className="hover:text-slate-900">Shop</Link>
           <span className="mx-2">/</span>
           <span className="text-slate-900">{name}</span>
         </nav>
