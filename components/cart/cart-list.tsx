@@ -15,7 +15,14 @@ import { useCart } from "@/context/CartContext"
 
 export default function CartList(){
 
-  const { setCartCount, cartItems, setCartItems, getCartItems, hasUnavailableItems } = useCart()
+  const { 
+    setCartCount, 
+    cartItems, 
+    setCartItems, 
+    getCartItems, 
+    hasUnavailableItems,
+    setHasUnavailableItems 
+  } = useCart()
   const [selectItems, setSelectItems] = useState<number[]>([])
 
   
@@ -150,6 +157,7 @@ export default function CartList(){
   useEffect(() => {
     const cartItemsIds = cartItems.map(item => item.id)
     setSelectItems(cartItemsIds)
+    setHasUnavailableItems(cartItems.some(item => !item.isAvailable))
   }, [cartItems])
 
 
@@ -230,6 +238,7 @@ export default function CartList(){
                            <CartQuantityInput
                             id={item.id}
                             quantity={item.quantity}
+                            availableStock={item.availableStock}
                             onUpdate={updateQuantity}
                           />
                         </TableCell>
@@ -277,12 +286,13 @@ export default function CartList(){
 
 // Stock Quantity Input
 type CartQuantityInputProps = {
-  id: number;
-  quantity: number;
-  onUpdate: (id: number, quantity: number) => Promise<boolean>;
+  id: number
+  quantity: number
+  availableStock: number
+  onUpdate: (id: number, quantity: number) => Promise<boolean>
 };
 
-const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) => {
+const CartQuantityInput = ({ id, quantity, availableStock, onUpdate, }: CartQuantityInputProps) => {
   
   const [value, setValue] = useState(quantity);
   const debouncedValue = useDebounce(value, 500);
@@ -347,15 +357,16 @@ const CartQuantityInput = ({ id, quantity, onUpdate, }: CartQuantityInputProps) 
         min={1}
         className="text-center"
         value={value}
+        disabled={availableStock <= 0 || (value >= availableStock)}
         onChange={(event) => {
           setValue(Number(event.target.value));
         }}
       />
       <InputGroupAddon align="inline-start">
-        <InputGroupButton onClick={decrement} variant="secondary"><MinusIcon /></InputGroupButton>
+        <InputGroupButton onClick={decrement} disabled={availableStock <= 0} variant="secondary"><MinusIcon /></InputGroupButton>
       </InputGroupAddon>
       <InputGroupAddon align="inline-end">
-        <InputGroupButton onClick={increment} variant="secondary"><PlusIcon /></InputGroupButton>
+        <InputGroupButton onClick={increment} disabled={availableStock <= 0 || (value >= availableStock)} variant="secondary"><PlusIcon /></InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
   );

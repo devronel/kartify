@@ -11,6 +11,7 @@ type CartContextType = {
   setCartItems: React.Dispatch<React.SetStateAction<CartDetails[]>>
   getCartItems: () => Promise<void>
   hasUnavailableItems: boolean
+  setHasUnavailableItems: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 type CartProviderProps = {
@@ -45,7 +46,15 @@ export function CartProvider({ children, cartItemCount, cart }: CartProviderProp
   }
 
   return (
-    <CartContext.Provider value={{ cartCount, setCartCount, cartItems, setCartItems, getCartItems, hasUnavailableItems }}>
+    <CartContext.Provider value={{ 
+      cartCount, 
+      setCartCount, 
+      cartItems, 
+      setCartItems, 
+      getCartItems, 
+      hasUnavailableItems,
+      setHasUnavailableItems
+    }}>
       {children}
     </CartContext.Provider>
   );
