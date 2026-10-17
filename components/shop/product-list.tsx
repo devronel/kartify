@@ -1,14 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronDown, PackageSearch, SlidersHorizontal } from "lucide-react";
 import FilterSidebar from "./filter-sidebar";
-import ProductCard from "./product-card";
+import ProductCard, { ProductCardSkeleton } from "./product-card";
 import apiClient from "@/lib/api-client";
 import { Paginate } from "@/types/paginate";
 import CustomPagination from "../shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "../ui/toast";
-import LoginModal from "../auth/login/modal";
+import { Button, buttonVariants } from "../ui/button";
 
 type PublicProduct = {
   id: number,
@@ -88,58 +90,104 @@ export default function ProductList(){
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      {/* Toolbar */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setMobileFiltersOpen(true)}
-            className="lg:hidden flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="cursor-pointer lg:hidden"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
+            <SlidersHorizontal data-icon="inline-start" aria-hidden="true" />
             Filters
-          </button>
-          <p className="text-sm text-slate-500">{products?.payload.length} products</p>
+          </Button>
+
+          <p className="text-sm text-muted-foreground">
+            {products
+              ? `${products.payload.length} ${products.payload.length === 1 ? "product" : "products"}`
+              : "Loading products…"}
+          </p>
         </div>
 
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 outline-none"
-        >
-          {sortOptions.map((opt) => (
-            <option key={opt}>{opt}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <label htmlFor="sort" className="text-sm text-muted-foreground">
+            Sort by
+          </label>
+          <div className="relative">
+            <select
+              id="sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="h-9 cursor-pointer appearance-none rounded-md border bg-background pl-3 pr-9 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt}>{opt}</option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-8">
         <FilterSidebar mobileOpen={mobileFiltersOpen} onClose={() => setMobileFiltersOpen(false)} />
 
-        <div className="flex-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {products?.payload.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+        <div className="min-w-0 flex-1">
+          {/* Loading state */}
+          {!products && (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <ProductCardSkeleton key={index} />
+              ))}
+            </div>
+          )}
 
-          {
-            products && (
-                products.totalItems > products.pageSize && (
-                    <div className="mt-3">
-                        <CustomPagination 
-                            currentPage={page}
-                            totalPages={products?.totalPages ?? 0}
-                            visiblePages={3}
-                            hasPrevious={products.hasPrevious}
-                            hasNext={products.hasNext}
-                            searchParams={searchParams.toString()}
-                        />
-                    </div>
-                )
-            )
-          }
+          {/* Empty state */}
+          {products && products.payload.length === 0 && (
+            <div className="flex min-h-75 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+              <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
+                <PackageSearch className="size-6 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <h2 className="text-lg font-semibold">No products found</h2>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                Try a different search or clear your filters to see everything.
+              </p>
+              <Link href="/shop" className={buttonVariants({ className: "mt-4" })}>
+                Clear filters
+              </Link>
+            </div>
+          )}
 
+          {/* Error state — TODO(logic): track a fetch error and switch to <ErrorFetchingIndicator /> here */}
+          {/*<ErrorFetchingIndicator title="Couldn't load products" description="..." onRetry={getProducts} />*/}
+
+          {/* Product grid */}
+          {products && products.payload.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4">
+                {products.payload.map((product) => (
+                  <ProductCard key={product.id} {...product} />
+                ))}
+              </div>
+
+              {products.totalItems > products.pageSize && (
+                <div className="mt-6">
+                  <CustomPagination 
+                    currentPage={page}
+                    totalPages={products.totalPages}
+                    visiblePages={3}
+                    hasPrevious={products.hasPrevious}
+                    hasNext={products.hasNext}
+                    searchParams={searchParams.toString()}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>

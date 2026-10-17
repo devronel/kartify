@@ -9,9 +9,10 @@ import { Swiper as SwiperWrapper, SwiperSlide } from 'swiper/react';
 import { FreeMode, Thumbs } from 'swiper/modules';
 import { Swiper } from "swiper/types";
 import { Button } from "../ui/button";
-import { DatabaseCheck, LayersMinus, MinusIcon, PlusIcon, ShoppingCart } from "lucide-react";
+import { DatabaseCheck, LayersMinus, MinusIcon, PlusIcon, ShoppingCart, Star } from "lucide-react";
 import { ButtonGroup } from "../ui/button-group";
 import { Input } from "../ui/input";
+import { Badge } from "../ui/badge";
 
 // Import Swiper styles
 import 'swiper/css';
@@ -241,33 +242,45 @@ export default function ProductDetail({
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <nav className="mb-8 text-sm text-slate-500">
-          <Link href="/" className="hover:text-slate-900">Home</Link>
-          <span className="mx-2">/</span>
-          <Link href="/shop" className="hover:text-slate-900">Shop</Link>
-          <span className="mx-2">/</span>
-          <span className="text-slate-900">{name}</span>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground sm:mb-8">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/" className="transition-colors hover:text-foreground">Home</Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <Link href="/shop" className="transition-colors hover:text-foreground">Shop</Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li className="text-foreground" aria-current="page">{name}</li>
+          </ol>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 mb-10">
+        <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
+          {/* Gallery */}
           <div>
             <SwiperWrapper
               style={{
-                '--swiper-navigation-color': '#fff',
-                '--swiper-pagination-color': '#fff',
+                '--swiper-navigation-color': 'var(--foreground)',
+                '--swiper-pagination-color': 'var(--foreground)',
               } as React.CSSProperties}
               spaceBetween={10}
               navigation={true}
               thumbs={{ swiper: thumbsSwiper }}
               modules={[FreeMode, Thumbs]}
-              className="mySwiper2"
+              className="mySwiper2 overflow-hidden rounded-xl border bg-muted"
             >
               {
                 images.map((image, index) => {
                   return (
                     <SwiperSlide key={index}>
-                      <img src={image} alt={`Image of ${name}`} />
+                      <img
+                        src={image}
+                        alt={`${name} — image ${index + 1} of ${images.length}`}
+                        className="object-contain!"
+                      />
                     </SwiperSlide>
                   )
                 })
@@ -285,8 +298,12 @@ export default function ProductDetail({
               {
                 images.map((image, index) => {
                   return (
-                    <SwiperSlide>
-                      <img src={image} alt={`Image of ${name}`} />
+                    <SwiperSlide key={index}>
+                      <img
+                        src={image}
+                        alt={`${name} thumbnail ${index + 1}`}
+                        className="rounded-lg object-cover!"
+                      />
                     </SwiperSlide>
                   )
                 })
@@ -294,49 +311,61 @@ export default function ProductDetail({
             </SwiperWrapper>
           </div>
 
+          {/* Info */}
           <div className="flex flex-col">
+            <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">{name}</h1>
 
-            <h1 className="text-3xl font-bold text-slate-900">{name}</h1>
-
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex items-center gap-1">
+            {/* Rating */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-0.5" aria-hidden="true">
                 {[...Array(5)].map((_, i) => (
-                  <svg
+                  <Star
                     key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(product.rating) ? "text-amber-400" : "text-slate-200"
+                    className={`size-4 ${
+                      i < Math.floor(product.rating)
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-muted-foreground/40"
                     }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+                  />
                 ))}
-                <span className="ml-1 text-sm text-slate-600">
-                  {product.rating} ({product.reviewCount} reviews)
-                </span>
               </div>
+              <span className="text-sm text-muted-foreground">
+                {product.rating} · {product.reviewCount} reviews
+              </span>
             </div>
 
-            <div className="mt-4 flex items-baseline gap-3">
-              <p className="text-3xl font-bold text-slate-900">&#8369;{moneyFormat.format(price)}</p>
+            {/* Price */}
+            <div className="mt-4 flex flex-wrap items-baseline gap-3">
+              <p className="text-2xl font-semibold text-foreground sm:text-3xl">
+                &#8369;{moneyFormat.format(price)}
+              </p>
+              {comparePrice > 0 && comparePrice > price ? (
+                <>
+                  <p className="text-base text-muted-foreground line-through">
+                    &#8369;{moneyFormat.format(comparePrice)}
+                  </p>
+                  <Badge>Sale</Badge>
+                </>
+              ) : null}
             </div>
 
-            <div className="mb-6">
-              <p className="mt-6 text-slate-600 leading-relaxed">{shortDescription}</p>
-            </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{shortDescription}</p>
 
-            <div className="flex flex-col gap-7">
-              {/* Variant attribute */}
-              <div className="flex flex-col gap-7">
-                {
-                  variantAttributes.map(attribute => {
-                    return (
-                      <div key={attribute.id} className="grid grid-cols-[100px_1fr]">
-                          <p className="text-sm">{attribute.name}</p>
-                          <div className="flex items-center gap-3">
+            <div className="mt-6 flex flex-col gap-6">
+              {/* Variant attributes */}
+              {variantAttributes.length > 0 ? (
+                <div className="flex flex-col gap-5">
+                  {
+                    variantAttributes.map(attribute => {
+                      return (
+                        <div key={attribute.id} className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                          <p className="text-sm font-medium text-foreground sm:w-28 sm:shrink-0 sm:pt-1.5">
+                            {attribute.name}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
                             {
                               attribute.values.map(attributeValue => {
+                                const optionId = `variant-${attribute.id}-${attributeValue.id}`
                                 return (
                                   <div key={attributeValue.id}>
                                     <input
@@ -345,17 +374,19 @@ export default function ProductDetail({
                                       checked={selectVariantAttribute[attribute.name] === attributeValue.id}
                                       value={attributeValue.id}
                                       onChange={handleSelectedVariant}
-                                      id={attributeValue.productAttributeValueName}
+                                      id={optionId}
                                       className="peer sr-only"
                                     />
                                     <label
-                                      htmlFor={attributeValue.productAttributeValueName}
+                                      htmlFor={optionId}
                                       className="
-                                        inline-flex cursor-pointer items-center rounded border px-3 py-1
-                                        text-sm font-medium
-                                        transition-colors
-                                        peer-checked:text-primary
+                                        inline-flex cursor-pointer items-center rounded-md border px-3 py-1.5
+                                        text-sm font-medium transition-colors
+                                        hover:bg-muted
                                         peer-checked:border-primary
+                                        peer-checked:bg-primary/5
+                                        peer-checked:text-primary
+                                        peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50
                                       "
                                     >
                                       {attributeValue.productAttributeValueName}
@@ -365,33 +396,49 @@ export default function ProductDetail({
                               })
                             }
                           </div>
-                      </div>
-                    )
-                  })
-                }
-              </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              ) : null}
               { errors.productVariantId && <FieldError>{errors.productVariantId}</FieldError> }
-              {/* Variant attribute */}
 
-              {/* Quantity */}
+              {/* Stock + quantity */}
               <div className="flex flex-col gap-3">
-                <p className={`text-sm flex items-center gap-1 ${ currentStockQuantity > 0 ? 'text-primary' : 'text-red-400'}`}>
-                  { currentStockQuantity > 0 ? <DatabaseCheck className="size-4" /> : <LayersMinus className="size-4" /> }
-                  { currentStockQuantity > 0 ? "In Stock" : "Out of Stock" }
-                </p>
-                {
-                  currentStockQuantity > 0 && (
-                    <p className="text-sm">Only <span className="font-bold">{currentStockQuantity}</span> left in stock</p>
-                  )
-                }
-                <div className="grid grid-cols-[100px_1fr]">
-                  <p className="text-sm">Quantity</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  {currentStockQuantity > 0 ? (
+                    <Badge variant="secondary" className="gap-1 text-primary">
+                      <DatabaseCheck className="size-3.5" aria-hidden="true" />
+                      In stock
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="gap-1">
+                      <LayersMinus className="size-3.5" aria-hidden="true" />
+                      Out of stock
+                    </Badge>
+                  )}
+                  {currentStockQuantity > 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Only <span className="font-medium text-foreground">{currentStockQuantity}</span> left
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                  <p className="text-sm font-medium text-foreground sm:w-28 sm:shrink-0">Quantity</p>
                   <ButtonGroup
                     orientation="horizontal"
-                    aria-label="Media controls"
+                    aria-label="Quantity"
                     className="h-fit"
                   >
-                    <Button onClick={decrementQuantity} disabled={cartItem.quantity <= 1} variant="outline" size="sm">
+                    <Button
+                      onClick={decrementQuantity}
+                      disabled={cartItem.quantity <= 1}
+                      variant="outline"
+                      size="sm"
+                      aria-label="Decrease quantity"
+                    >
                       <MinusIcon />
                     </Button>
                     <Input 
@@ -399,35 +446,53 @@ export default function ProductDetail({
                       value={cartItem.quantity} 
                       onChange={(event) => getQuantity(Number(event.target.value))} 
                       type="number" 
-                      className="text-center text-sm w-12 h-8"
+                      aria-label="Quantity"
+                      className="h-8 w-12 text-center text-sm"
                     />
-                    <Button onClick={incrementQuantity} disabled={cartItem.quantity >= currentStockQuantity || isCartButtonDisable} variant="outline" size="sm">
+                    <Button
+                      onClick={incrementQuantity}
+                      disabled={cartItem.quantity >= currentStockQuantity || isCartButtonDisable}
+                      variant="outline"
+                      size="sm"
+                      aria-label="Increase quantity"
+                    >
                       <PlusIcon />
                     </Button>
                   </ButtonGroup>
                 </div>
               </div>
-              {/* Quantity */}
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            {/* Add to cart */}
+            <div className="mt-8 flex flex-col gap-2">
               <Button 
                 onClick={addToCart} 
                 size={'lg'} 
                 disabled={isCartButtonDisable || isButtonLoading} 
-                className={`w-full`}
+                className="w-full"
               >
-                { isButtonLoading ? <Spinner data-icon="inline-start" /> : <ShoppingCart className=" align-top" /> }
-                Add to Cart
+                { isButtonLoading ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <ShoppingCart data-icon="inline-start" aria-hidden="true" />
+                ) }
+                Add to cart
               </Button>
+              {isCartButtonDisable && !isButtonLoading ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  {currentStockQuantity <= 0
+                    ? "This item is out of stock."
+                    : "Select an option to continue."}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
 
         {/* Description */}
-        <div className="border-t py-4">
-          <h1 className="font-bold text-2xl mb-2">Description</h1>
-          <p>{description}</p>
+        <div className="border-t pt-8">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">Description</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </div>
 
