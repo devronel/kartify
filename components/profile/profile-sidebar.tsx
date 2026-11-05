@@ -19,12 +19,14 @@ import {
   LogOut,
   BookUser,
   MapPin,
+  Package,
   UserLock
 } from "lucide-react";
 
 const mainItems = [
   { label: "Personal Information", href: "/profile", icon: BookUser },
   { label: "Address", href: "/profile/address", icon: MapPin },
+  { label: "Orders", href: "/profile/orders", icon: Package },
   { label: "Account", href: "/profile/account", icon: UserLock },
 ];
 
