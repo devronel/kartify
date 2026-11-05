@@ -17,10 +17,12 @@ import { ValidationErrorResponse } from "@/types/api-error"
 import useDebounce from "@/hooks/use-debounce"
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../ui/input-group"
 import { useCart } from "@/context/CartContext"
+import { useRouter } from "next/navigation"
 
 
 export default function CartList(){
 
+  const router = useRouter()
   const { 
     setCartCount, 
     cartItems, 
@@ -140,7 +142,9 @@ export default function CartList(){
 
 
   const checkout = () => {
-    console.log(selectItems)
+    
+    router.push('/checkout'); 
+
   }
 
 
