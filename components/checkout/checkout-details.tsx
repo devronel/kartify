@@ -57,6 +57,7 @@ export default function CheckoutDetails({ checkoutDetails } : CheckoutDetailsPro
       window.location.replace(response.data.checkoutUrl)
 
     } catch (error: unknown) {
+      // TODO: Error page that have `Go to Order` to retry
       console.log(error)
     }
 
