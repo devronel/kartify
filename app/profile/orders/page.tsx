@@ -1,8 +1,6 @@
 import Link from "next/link"
 import {
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   PackageOpen,
   PackageSearch,
 } from "lucide-react"
@@ -11,10 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CardList from "@/components/profile/orders/card-list"
 import { apiServer } from "@/lib/api-server"
-import { notFound } from "next/navigation"
-import CustomPagination from "@/components/shared/pagination"
 import { OrderResponse, OrderStatus } from "@/types/order"
 import { Paginate } from "@/types/paginate"
+import KartifyPagination from "@/components/shared/kartify-pagination"
+import StatusFilter from "@/components/profile/orders/status-filter"
 
 export const metadata = {
   title: "Kartify - My Orders",
@@ -34,15 +32,17 @@ export default async function OrdersPage({ searchParams }: Props) {
     const queryParams = new URLSearchParams();
     const params = await searchParams;
 
-    if(params && params.page){
-      queryParams.set("page", String(params.page))
-    }
+    if(params){
 
-    if(params && params.status){
-      queryParams.set("status", String(params.status))
+      if(params.page){
+        queryParams.set("page", String(params.page))
+      }
+  
+      if(params.status){
+        queryParams.set("status", String(params.status))
+      }
+      
     }
-
-    queryParams.set("pageSize", "3")
 
     const response = await apiServer(`/api/orders?${queryParams.toString()}`)
 
@@ -58,38 +58,9 @@ export default async function OrdersPage({ searchParams }: Props) {
         </div>
   
         {/* TODO(logic): tab change */}
-        <Tabs defaultValue="all">
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <TabsList className="w-max">
-              <TabsTrigger value="all" className="shrink-0 px-3">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="pending" className="shrink-0 px-3">
-                Waiting for payment
-              </TabsTrigger>
-              <TabsTrigger value="paid" className="shrink-0 px-3">
-                Paid
-              </TabsTrigger>
-              <TabsTrigger value="processing" className="shrink-0 px-3">
-                Processing
-              </TabsTrigger>
-              <TabsTrigger value="shipped" className="shrink-0 px-3">
-                Shipped
-              </TabsTrigger>
-              <TabsTrigger value="delivered" className="shrink-0 px-3">
-                Delivered
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="shrink-0 px-3">
-                Cancelled
-              </TabsTrigger>
-            </TabsList>
-          </div>
-        </Tabs>
+        <StatusFilter />
   
         {/*
-          TODO(logic): fetch orders
-          TODO(logic): render one card per order
-          TODO(logic): format dates and money
           TODO(logic): while loading, render <OrdersListSkeleton />
           TODO(logic): when there are no orders, render <OrdersEmptyState />
           TODO(logic): when the selected filter has no results, render <OrdersFilteredEmptyState />
@@ -108,14 +79,17 @@ export default async function OrdersPage({ searchParams }: Props) {
 
 
         {/* Pagination */}
-        <CustomPagination 
-          currentPage={params.page ?? 0}
-          totalPages={payload.totalPages}
-          visiblePages={3}
-          hasPrevious={payload.hasPrevious}
-          hasNext={payload.hasNext}
-          searchParams=""
-        />
+        {
+          payload.totalItems > payload.pageSize && (
+            <KartifyPagination
+              currentPage={params.page ?? 0}
+              totalPages={payload.totalPages}
+              visiblePages={3}
+              hasPrevious={payload.hasPrevious}
+              hasNext={payload.hasNext}
+            />
+          )
+        }
         
       </div>
     )
