@@ -4,7 +4,7 @@ export type CheckoutAddress = {
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
-  shippingAddressLine2: string
+  shippingAddressLine2: string | null
   shippingProvince: string
   shippingCity: string
   shippingBarangay: string
@@ -28,4 +28,11 @@ export type CheckoutDetailsResponse = {
   cartItems: CheckoutCartItem[]
   subtotal: number
   total: number
+}
+
+export type ItemProblem = {
+  cartItemId: number,
+  name: string,
+  reason: "PRODUCT_UNAVAILABLE" | "VARIANT_MISMATCH" | "OUT_OF_STOCK" | "INSUFFICIENT_STOCK" | "PRICE_CHANGED",
+  availableStock: number
 }
