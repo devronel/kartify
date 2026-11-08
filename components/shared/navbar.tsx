@@ -138,12 +138,12 @@ export default function NavBar() {
                       </div>
                       <div className="my-1 border-t border-slate-100" />
                       <Link
-                        href="/profile"
+                        href="/account"
                         onClick={() => setProfileOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                       >
                         <User className="w-4 h-4" />
-                        Profile
+                        Account
                       </Link>
                       <div className="my-1 border-t border-slate-100" />
                       <button
@@ -203,7 +203,7 @@ export default function NavBar() {
               { label: "Deals", href: "/deals" },
               { label: "New Arrivals", href: "/new-arrivals" },
               { label: "Categories", href: "/categories" },
-              { label: "Account", href: user ? "/profile" : "/login" },
+              { label: "Account", href: user ? "/account" : "/login" },
             ].map((item) => (
               <Link
                 key={item.label}

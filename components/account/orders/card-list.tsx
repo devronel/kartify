@@ -1,7 +1,8 @@
 import CustomPagination from "@/components/shared/pagination";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { moneyFormat } from "@/lib/helper";
+import { cn } from "@/lib/utils";
 import { OrderResponse, OrderStatus } from "@/types/order";
 import { Paginate } from "@/types/paginate";
 import { ChevronLeft, ChevronRight, Package } from "lucide-react";
@@ -83,9 +84,12 @@ export default function CardList({ orders }: CardListProps){
                             </Button>
                           ) : null
                         }
-                        <Button variant="outline" className="w-full">
+                        {/* <Button variant="outline" className="w-full">
                           View order
-                        </Button>
+                        </Button> */}
+                        <Link href={`/account/orders/${order.orderNumber}`} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+                          View order
+                        </Link>
                       </div>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircleIcon, Banknote, Lock, MapPin, Plus, Wallet } from "lucide-react";
+import { Banknote, Lock, MapPin, Plus, Wallet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { moneyFormat } from "@/lib/helper";
@@ -9,12 +9,12 @@ import { Button } from "../ui/button";
 import { CheckoutAddress, CheckoutDetailsResponse, ItemProblem } from "@/types/checkout";
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/api-client";
-import { AddressFormCreateDialog } from "../profile/address/address-form-create-dialog";
+import { AddressFormCreateDialog } from "../account/address/address-form-create-dialog";
 import { Address } from "@/types/address";
 import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { toast } from "../ui/toast";
+import { CheckoutItemProblems } from "./checkout-item-problems";
 
 
 const paymentMethods = [
@@ -53,7 +53,7 @@ export default function CheckoutDetails({ checkoutDetails } : CheckoutDetailsPro
   const [userAddresses, setUserAddresses] = useState<CheckoutAddress[]>(addresses)
   const [addressId, setAddressId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [itemProblem, setItemProblems] = useState<ItemProblem[]>([])
+  const [itemProblems, setItemProblems] = useState<ItemProblem[]>([])
 
 
   // Checkout order
@@ -112,11 +112,6 @@ export default function CheckoutDetails({ checkoutDetails } : CheckoutDetailsPro
       }
 
       if(status === 422 && data.errors.items){
-        toast.add({
-          type: "Something's wrong with your cart",
-          description: "Some items in your cart are unavailable. Please review your cart.",
-          priority: "high",
-        })
         setItemProblems(data.errors.items)
         return
       }
@@ -356,6 +351,7 @@ export default function CheckoutDetails({ checkoutDetails } : CheckoutDetailsPro
           </CardContent>
 
           <CardFooter className="flex-col gap-3 border-t">
+            <CheckoutItemProblems problems={itemProblems} />
             <Button onClick={checkout} className="w-full" size="lg">
               <Lock className="size-4" aria-hidden="true" />
               Place order

@@ -46,7 +46,7 @@ export default function ProfileNavBar() {
               <p className="px-3 py-2 text-xs font-medium text-sidebar-foreground/50">My Account</p>
               <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
                 <User className="w-4 h-4" />
-                Profile
+                Account
               </button>
               <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
                 <Settings className="w-4 h-4" />

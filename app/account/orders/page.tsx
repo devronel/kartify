@@ -7,12 +7,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import CardList from "@/components/profile/orders/card-list"
+import CardList from "@/components/account/orders/card-list"
 import { apiServer } from "@/lib/api-server"
 import { OrderResponse, OrderStatus } from "@/types/order"
 import { Paginate } from "@/types/paginate"
 import KartifyPagination from "@/components/shared/kartify-pagination"
-import StatusFilter from "@/components/profile/orders/status-filter"
+import StatusFilter from "@/components/account/orders/status-filter"
 
 export const metadata = {
   title: "Kartify - My Orders",

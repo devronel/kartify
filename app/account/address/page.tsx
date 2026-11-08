@@ -1,4 +1,4 @@
-import { AddressList } from "@/components/profile/address/address-list"
+import { AddressList } from "@/components/account/address/address-list"
 
 export const metadata = {
   title: "Kartify - Address"

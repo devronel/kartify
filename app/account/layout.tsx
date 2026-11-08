@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import ProfileNavBar from "@/components/profile/profile-navbar";
-import ProfileSidebar from "@/components/profile/profile-sidebar";
+import ProfileNavBar from "@/components/account/profile-navbar";
+import ProfileSidebar from "@/components/account/profile-sidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -24,10 +24,10 @@ import {
 } from "lucide-react";
 
 const mainItems = [
-  { label: "Personal Information", href: "/profile", icon: BookUser },
-  { label: "Address", href: "/profile/address", icon: MapPin },
-  { label: "Orders", href: "/profile/orders", icon: Package },
-  { label: "Account", href: "/profile/account", icon: UserLock },
+  { label: "Personal Information", href: "/account", icon: BookUser },
+  { label: "Address", href: "/account/address", icon: MapPin },
+  { label: "Orders", href: "/account/orders", icon: Package },
+  { label: "Credentials", href: "/account/credentials", icon: UserLock },
 ];
 
 export default function ProfileSidebar() {

@@ -14,6 +14,7 @@ const REASON_LABEL: Record<ItemProblem["reason"], (p: ItemProblem) => string> = 
 };
 
 export function CheckoutItemProblems({ problems }: { problems: ItemProblem[] }) {
+  
   if (problems.length === 0) return null;
 
   return (
@@ -28,9 +29,9 @@ export function CheckoutItemProblems({ problems }: { problems: ItemProblem[] }) 
             </li>
           ))}
         </ul>
-        <Button variant="outline" size="sm" className="mt-3">
+        <div className="mt-2">
           <Link href="/cart">Review cart</Link>
-        </Button>
+        </div>
       </AlertDescription>
     </Alert>
   );

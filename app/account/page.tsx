@@ -1,6 +1,6 @@
-import { ChangePasswordForm } from "@/components/profile/personal-information/change-password-form";
-import { PersonalInfoForm } from "@/components/profile/personal-information/personal-info-form";
-import { ProfileAvatarCard } from "@/components/profile/personal-information/profile-avatar-card";
+import { ChangePasswordForm } from "@/components/account/personal-information/change-password-form";
+import { PersonalInfoForm } from "@/components/account/personal-information/personal-info-form";
+import { ProfileAvatarCard } from "@/components/account/personal-information/profile-avatar-card";
 import { apiServer } from "@/lib/api-server";
 
 export const metadata = {
