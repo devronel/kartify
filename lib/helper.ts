@@ -163,3 +163,34 @@ export const moneyFormat = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+
+// Format date in human readable format
+export const toReadableDate = (dateString: string) => {
+  
+  if (!dateString) return '';
+  
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+}
+
+
+// Format date with time in human readable format
+export const toReadableDateWithTime = (dateString: string) => {
+  
+  if (!dateString) return '';
+  
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+}

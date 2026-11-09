@@ -1,11 +1,9 @@
-import CustomPagination from "@/components/shared/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { moneyFormat } from "@/lib/helper";
 import { cn } from "@/lib/utils";
 import { OrderResponse, OrderStatus } from "@/types/order";
 import { Paginate } from "@/types/paginate";
-import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import Link from "next/link";
 
 type CardListProps = {

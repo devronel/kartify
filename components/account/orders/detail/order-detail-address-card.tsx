@@ -1,6 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export function OrderDetailAddressCard() {
+
+
+type OrderDetailAddressCardProps = {
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingBarangay: string
+  shippingCity: string
+  shippingProvince: string
+  shippingPostalCode: string
+  shippingCountry: string
+}
+
+export function OrderDetailAddressCard({
+  shippingRecipientName,
+  shippingPhone,
+  shippingAddressLine1,
+  shippingBarangay,
+  shippingCity,
+  shippingProvince,
+  shippingPostalCode,
+  shippingCountry
+}: OrderDetailAddressCardProps) {
   return (
     <section aria-labelledby="order-address-heading">
       <Card>
@@ -12,14 +34,14 @@ export function OrderDetailAddressCard() {
 
         <CardContent>
           <div>
-            <p className="font-medium">Juan Dela Cruz</p>
-            <p className="text-sm text-muted-foreground">+63 917 555 0142</p>
+            <p className="font-medium">{shippingRecipientName}</p>
+            <p className="text-sm text-muted-foreground">{shippingPhone}</p>
           </div>
 
           <div className="text-sm text-muted-foreground">
-            <p>123 Rizal Street</p>
-            <p>Brgy. San Jose, Calamba City</p>
-            <p>Laguna 4027, Philippines</p>
+            <p>{shippingAddressLine1}</p>
+            <p>{shippingBarangay}, {shippingCity}</p>
+            <p>{shippingProvince} {shippingPostalCode}, {shippingCountry}</p>
           </div>
         </CardContent>
       </Card>

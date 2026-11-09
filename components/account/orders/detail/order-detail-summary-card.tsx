@@ -1,6 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { moneyFormat } from "@/lib/helper"
 
-export function OrderDetailSummaryCard() {
+type OrderDetailsSummaryCardProps = {
+  subtotal: number,
+  total: number
+}
+
+export function OrderDetailSummaryCard({ subtotal, total } : OrderDetailsSummaryCardProps) {
   return (
     <section aria-labelledby="order-summary-heading">
       <Card>
@@ -14,8 +20,7 @@ export function OrderDetailSummaryCard() {
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted-foreground">Subtotal</dt>
-              {/* TODO(logic): format money */}
-              <dd>₱3,196.50</dd>
+              <dd>&#8369;{moneyFormat.format(subtotal)}</dd>
             </div>
 
             <div className="flex items-center justify-between gap-3">
@@ -27,8 +32,7 @@ export function OrderDetailSummaryCard() {
 
             <div className="flex items-center justify-between gap-3 border-t pt-3">
               <dt className="font-semibold">Total</dt>
-              {/* TODO(logic): format money */}
-              <dd className="text-base font-semibold">₱3,196.50</dd>
+              <dd className="text-base font-semibold">&#8369;{moneyFormat.format(total)}</dd>
             </div>
           </dl>
 

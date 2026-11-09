@@ -1,7 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OrderStatusBadge } from "./order-status-badge"
+import { OrderStatus, PaymentMethod, PaymentStatus } from "@/types/order"
+import { Badge } from "@/components/ui/badge"
 
-export function OrderDetailPaymentCard() {
+
+type OrderDetailPaymentCardProps = {
+  paymentMethod: PaymentMethod,
+  paymentStatus: PaymentStatus
+  isExpired: boolean
+}
+
+export function OrderDetailPaymentCard({ paymentMethod, paymentStatus, isExpired }: OrderDetailPaymentCardProps) {
   return (
     <section aria-labelledby="order-payment-heading">
       <Card>
@@ -15,20 +24,26 @@ export function OrderDetailPaymentCard() {
           <dl className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted-foreground">Method</dt>
-              <dd className="font-medium">QR Ph</dd>
+              <dd className="font-medium">{paymentMethod}</dd>
             </div>
 
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted-foreground">Status</dt>
               <dd>
-                <OrderStatusBadge />
+                {
+                  isExpired ? (
+                    <Badge variant="destructive">Expired</Badge>
+                  ) : (
+                    <Badge variant="outline">{paymentStatus}</Badge>
+                  )
+                }
               </dd>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
+            {/* <div className="flex items-center justify-between gap-3">
               <dt className="text-muted-foreground">Payment</dt>
               <dd className="text-muted-foreground">Not paid yet</dd>
-            </div>
+            </div> */}
           </dl>
         </CardContent>
       </Card>
