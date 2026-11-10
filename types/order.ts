@@ -4,14 +4,19 @@ export type PaymentStatus = "CREATING" | "PENDING" | "SUCCEEDED" | "FAILED" | "S
 
 export type PaymentMethod = "GCASH" | "MAYA" | "QRPh"
 
+export type PaymentAction = "NONE" | "PAY" | "RETRY"
+
 export type OrderResponse = {
-  canPay: boolean
-  expireAt: string
-  itemCount: number
   orderNumber: string
-  paymentStatus: string
   status: OrderStatus
+  paymentStatus: PaymentStatus
+  checkoutUrl: string
   total: number
+  itemCount: number
+  paymentAction: PaymentAction
+  isExpired: boolean
+  expiresAt: string
+  createdAt: string
   orderItems: OrderItem[]
 }
 
@@ -55,7 +60,7 @@ export type OrderDetailsResponse = {
   shippingPostalCode: string
   shippingCountry: string
   notes: string
-  isPayable: boolean
+  paymentAction: PaymentAction
   isExpired: boolean
   expiresAt: string
   createdAt: string,

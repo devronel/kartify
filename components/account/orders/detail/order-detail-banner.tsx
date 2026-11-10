@@ -1,7 +1,25 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+"use client"
 
-export function OrderDetailBanner() {
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { PaymentAction } from "@/types/order"
+import { useState } from "react"
+
+type OrderDetailBannerProp = {
+  paymentAction: PaymentAction
+  checkoutUrl: string
+  orderNumber: string
+}
+
+export function OrderDetailBanner({ paymentAction, checkoutUrl, orderNumber }: OrderDetailBannerProp) {
+
+  const [isRetrying, setIsRetrying] = useState<boolean>(false)
+  
+  const retry = () => {
+    console.log(orderNumber)
+  }
+
   return (
     <section aria-labelledby="order-banner-heading">
       <Card>
@@ -17,8 +35,18 @@ export function OrderDetailBanner() {
           </div>
 
           <div className="flex flex-col gap-2 sm:items-end">
-            {/* TODO(logic): Pay now click and redirect */}
-            <Button className="w-full sm:w-auto">Pay now</Button>
+            {
+              paymentAction === "PAY" && checkoutUrl && (
+                <a href={checkoutUrl} target="_blank" className={cn(buttonVariants({ variant: "default" }), "w-full")}>
+                  Pay now
+                </a>
+              )
+            }
+            {
+              paymentAction === "RETRY" && (
+                <Button onClick={retry} disabled={isRetrying}>Try again</Button>
+              )
+            }
             <p className="text-xs text-muted-foreground">
               Already paid? This page updates automatically.
             </p>

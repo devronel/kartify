@@ -1,16 +1,23 @@
+"use client"
+
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { moneyFormat } from "@/lib/helper";
+import { moneyFormat, toReadableDate } from "@/lib/helper";
 import { cn } from "@/lib/utils";
 import { OrderResponse, OrderStatus } from "@/types/order";
 import { Paginate } from "@/types/paginate";
 import Link from "next/link";
+import { useState } from "react";
 
 type CardListProps = {
   orders: Paginate<OrderResponse>
 }
 
 export default function CardList({ orders }: CardListProps){
+
+  const retry = async () => {
+
+  }
 
   return (
     <>
@@ -25,17 +32,21 @@ export default function CardList({ orders }: CardListProps){
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <Link
-                            href="/profile/orders/ORD-2026-5A9F2C7D8E31"
+                            href={`orders/${order.orderNumber}`}
                             className="font-medium text-foreground hover:underline"
                           >
                             { order.orderNumber }
                           </Link>
-                          {/* <p className="mt-0.5 text-xs text-muted-foreground">
-                            Oct 22, 2026
-                          </p> */}
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {toReadableDate(order.createdAt)}
+                          </p>
                         </div>
                         {
-                          <OrderBadgeStatus status={order.status} />
+                          order.isExpired ? (
+                            <Badge variant="destructive">Expired</Badge>
+                          ) : (
+                            <OrderBadgeStatus status={order.status} />
+                          )
                         }
                       </div>
 
@@ -76,15 +87,19 @@ export default function CardList({ orders }: CardListProps){
                       </div>
                       <div className="flex flex-col gap-2">
                         {
-                          order.canPay ? (
-                            <Button className="w-full" disabled>
+                          order.paymentAction === "PAY" && order.checkoutUrl && (
+                            <a href={order.checkoutUrl} target="_blank" className={cn(buttonVariants({ variant: "default" }), "w-full")}>
                               Pay now
-                            </Button>
-                          ) : null
+                            </a>
+                          )
                         }
-                        {/* <Button variant="outline" className="w-full">
-                          View order
-                        </Button> */}
+                        {
+                          order.paymentAction === "RETRY" && (
+                            <RetryPayment 
+                              orderNumber={order.orderNumber}
+                            />
+                          )
+                        }
                         <Link href={`/account/orders/${order.orderNumber}`} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
                           View order
                         </Link>
@@ -105,6 +120,22 @@ export default function CardList({ orders }: CardListProps){
 }
 
 
+// TODO: retry payment
+// Retry payment button
+const RetryPayment = ({ orderNumber }: { orderNumber: string }) => {
+  
+  const [isRetrying, setIsRetrying] = useState<boolean>(false)
+
+  const retry = () => {
+    setIsRetrying(true)
+    console.log(orderNumber)
+  }
+
+  return <Button onClick={retry} disabled={isRetrying}>Try again</Button>
+}
+
+
+// Order Status Badge
 const OrderBadgeStatus = ({ status }: { status: OrderStatus }) => {
 
   switch (status) {

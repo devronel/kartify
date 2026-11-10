@@ -47,8 +47,12 @@ export default async function OrderDetailPage({ params }: Props) {
         */}
 
         {
-          payload.isPayable && (
-            <OrderDetailBanner />
+          payload.paymentAction !== "NONE" && (
+            <OrderDetailBanner 
+              paymentAction={payload.paymentAction}
+              checkoutUrl={payload.payment.checkoutUrl}
+              orderNumber={payload.orderNumber}
+            />
           )
         }
   
