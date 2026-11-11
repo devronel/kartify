@@ -2,7 +2,10 @@
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { toast } from "@/components/ui/toast"
+import apiClient, { isAxiosError } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
+import { ApiError } from "@/types/api-error"
 import { PaymentAction } from "@/types/order"
 import { useState } from "react"
 
@@ -16,8 +19,45 @@ export function OrderDetailBanner({ paymentAction, checkoutUrl, orderNumber }: O
 
   const [isRetrying, setIsRetrying] = useState<boolean>(false)
   
-  const retry = () => {
-    console.log(orderNumber)
+  // Retry Payment
+  const retry = async () => {
+
+    if(isRetrying) return
+
+    try {
+      
+      setIsRetrying(true)
+      
+      const response = await apiClient.post(`/api/checkout/retry/${orderNumber}`)
+
+      const payload = response.data
+
+      if(payload.checkoutUrl){
+        window.location.replace(response.data.checkoutUrl)
+      }
+      
+    } catch (error: unknown) {
+
+      if (!isAxiosError<ApiError>(error) || !error.response) {
+        toast.add({
+          type: "Something wen't wrong",
+          description: "We couldn't reach the server. If an order was placed, you'll find it in My orders.",
+          priority: "high",
+        })
+        return;
+      }
+
+      const { data } = error.response
+
+      toast.add({
+        type: "Error",
+        description: data.message ?? data.error,
+        priority: "high",
+      })
+
+    } finally {
+      setIsRetrying(false)
+    }
   }
 
   return (
@@ -28,10 +68,12 @@ export function OrderDetailBanner({ paymentAction, checkoutUrl, orderNumber }: O
             <h2 id="order-banner-heading" className="text-base font-semibold">
               Waiting for payment
             </h2>
+
             {/* TODO(logic): countdown and expired check from expiresAt */}
             <p className="text-sm text-muted-foreground">
-              Pay within 24 min to keep your order.
+              Pay within 30 min to keep your order.
             </p>
+
           </div>
 
           <div className="flex flex-col gap-2 sm:items-end">

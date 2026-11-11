@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { isAxiosError } from "axios";
 import { toast } from "../ui/toast";
 import { CheckoutItemProblems } from "./checkout-item-problems";
+import { Spinner } from "../ui/spinner";
 
 
 const paymentMethods = [
@@ -352,9 +353,9 @@ export default function CheckoutDetails({ checkoutDetails } : CheckoutDetailsPro
 
           <CardFooter className="flex-col gap-3 border-t">
             <CheckoutItemProblems problems={itemProblems} />
-            <Button onClick={checkout} className="w-full" size="lg">
+            <Button onClick={checkout} disabled={isSubmitting} className="w-full" size="lg">
               <Lock className="size-4" aria-hidden="true" />
-              Place order
+              {isSubmitting ? "Processing Payment..." : "Place order"}
             </Button>
 
             {/* Disabled state — TODO(logic): disable the button and show this when no address or payment is selected

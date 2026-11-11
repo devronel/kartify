@@ -4,3 +4,8 @@ export type ValidationErrorResponse = {
   timestamp: string;
   status: 422;
 }
+
+export type ApiError = {
+  error?: string
+  message: string,
+}

@@ -1,14 +1,9 @@
 import Link from "next/link"
-import {
-  AlertCircle,
-  PackageOpen,
-  PackageSearch,
-} from "lucide-react"
+import { apiServer } from "@/lib/api-server"
+import { AlertCircle, PackageOpen, PackageSearch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CardList from "@/components/account/orders/card-list"
-import { apiServer } from "@/lib/api-server"
 import { OrderResponse, OrderStatus } from "@/types/order"
 import { Paginate } from "@/types/paginate"
 import KartifyPagination from "@/components/shared/kartify-pagination"
@@ -50,6 +45,7 @@ export default async function OrdersPage({ searchParams }: Props) {
 
     return (
       <div className="mx-auto w-full max-w-4xl space-y-6">
+        
         <div>
           <h1 className="text-xl font-semibold">My orders</h1>
           <p className="text-sm text-muted-foreground">
@@ -57,23 +53,15 @@ export default async function OrdersPage({ searchParams }: Props) {
           </p>
         </div>
   
-        {/* TODO(logic): tab change */}
+        {/* Status Filter Buttons */}
         <StatusFilter />
-  
-        {/*
-          TODO(logic): while loading, render <OrdersListSkeleton />
-          TODO(logic): when there are no orders, render <OrdersEmptyState />
-          TODO(logic): when the selected filter has no results, render <OrdersFilteredEmptyState />
-          TODO(logic): when the request fails, render <OrdersErrorState />
-        */}
-
 
         {/* Order list */}
         {
           payload.totalItems > 0 ? (
             <CardList orders={response.data} />
           ) : (
-            <OrdersEmptyState />
+            params.status ? <OrdersFilteredEmptyState /> : <OrdersEmptyState />
           )
         }
 

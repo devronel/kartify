@@ -2,10 +2,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import apiClient from "@/lib/api-client";
 import { moneyFormat, toReadableDate } from "@/lib/helper";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/types/api-error";
 import { OrderResponse, OrderStatus } from "@/types/order";
 import { Paginate } from "@/types/paginate";
+import { isAxiosError } from "axios";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -14,10 +18,6 @@ type CardListProps = {
 }
 
 export default function CardList({ orders }: CardListProps){
-
-  const retry = async () => {
-
-  }
 
   return (
     <>
@@ -120,15 +120,50 @@ export default function CardList({ orders }: CardListProps){
 }
 
 
-// TODO: retry payment
 // Retry payment button
 const RetryPayment = ({ orderNumber }: { orderNumber: string }) => {
   
   const [isRetrying, setIsRetrying] = useState<boolean>(false)
 
-  const retry = () => {
-    setIsRetrying(true)
-    console.log(orderNumber)
+   // Retry Payment
+  const retry = async () => {
+
+    if(isRetrying) return
+
+    try {
+      
+      setIsRetrying(true)
+      
+      const response = await apiClient.post(`/api/checkout/retry/${orderNumber}`)
+
+      const payload = response.data
+
+      if(payload.checkoutUrl){
+        window.location.replace(response.data.checkoutUrl)
+      }
+      
+    } catch (error: unknown) {
+
+      if (!isAxiosError<ApiError>(error) || !error.response) {
+        toast.add({
+          type: "Something wen't wrong",
+          description: "We couldn't reach the server. If an order was placed, you'll find it in My orders.",
+          priority: "high",
+        })
+        return;
+      }
+
+      const { data } = error.response
+
+      toast.add({
+        type: "Error",
+        description: data.message ?? data.error,
+        priority: "high",
+      })
+
+    } finally {
+      setIsRetrying(false)
+    }
   }
 
   return <Button onClick={retry} disabled={isRetrying}>Try again</Button>

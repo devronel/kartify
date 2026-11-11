@@ -37,7 +37,6 @@ export function OrderDetailHeader({ orderNumber, createdAt, orderStatus, isExpir
           }
         </div>
 
-        {/* TODO(logic): format the placed date */}
         <p className="text-sm text-muted-foreground">Placed { toReadableDate(createdAt) }</p>
       </div>
     </header>

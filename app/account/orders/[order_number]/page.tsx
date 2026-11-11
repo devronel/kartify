@@ -5,9 +5,11 @@ import { OrderDetailItemsCard } from "@/components/account/orders/detail/order-d
 import { OrderDetailPaymentCard } from "@/components/account/orders/detail/order-detail-payment-card"
 import { OrderDetailSummaryCard } from "@/components/account/orders/detail/order-detail-summary-card"
 import { OrderDetailTimeline } from "@/components/account/orders/detail/order-detail-timeline"
+import { OrderNotFound } from "@/components/account/orders/detail/order-not-found"
+import { PaymentExpiredBanner } from "@/components/account/orders/detail/payment-expired-banner"
+import { PaymentReceivedBanner } from "@/components/account/orders/detail/payment-received-banner"
 import { apiServer } from "@/lib/api-server"
 import { OrderDetailsResponse } from "@/types/order"
-import { notFound } from "next/navigation"
 
 export const metadata = {
   title: "Kartify - Order details",
@@ -27,8 +29,6 @@ export default async function OrderDetailPage({ params }: Props) {
 
     const payload: OrderDetailsResponse = response.data
 
-    console.log(payload)
-
     return (
       <div className="mx-auto w-full max-w-4xl space-y-6">
         
@@ -38,13 +38,6 @@ export default async function OrderDetailPage({ params }: Props) {
           orderStatus={payload.status}
           isExpired={payload.isExpired}
         />
-  
-        {/*
-          TODO(logic): fetch the order by number; when the API returns 404, render <OrderNotFound />.
-          TODO(logic): while loading, render <OrderDetailSkeleton />.
-          TODO(logic): re-check the order status every few seconds while payment is pending, and again when the tab regains focus.
-          TODO(logic): swap the banner below for <PaymentErrorBanner />, <PaymentExpiredBanner />, <PaymentReceivedBanner />, or <OrderCancelledBanner /> depending on the order status.
-        */}
 
         {
           payload.paymentAction !== "NONE" && (
@@ -54,6 +47,10 @@ export default async function OrderDetailPage({ params }: Props) {
               orderNumber={payload.orderNumber}
             />
           )
+        }
+
+        {
+          payload.paymentAction === "NONE" && payload.isExpired  ? <PaymentExpiredBanner /> : <PaymentReceivedBanner />
         }
   
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start">
@@ -102,8 +99,7 @@ export default async function OrderDetailPage({ params }: Props) {
     )
 
   } catch (error) {
-    console.log(error)
-    notFound()
+    return <OrderNotFound />
   }
 
 }
