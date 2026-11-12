@@ -23,7 +23,7 @@ export function PaymentExpiredBanner() {
             variant="outline"
             className="w-full sm:w-auto"
             nativeButton={false}
-            render={<Link href="/" />}
+            render={<Link href="/shop" />}
           >
             Continue shopping
           </Button>
