@@ -20,16 +20,11 @@ export default async function ResetPassword({ searchParams } : PageProps) {
     }
 
     try {
-        const response = await apiServer.post('/api/validate-reset-token', { email: email, token: token }, {
+        await apiServer.post('/api/validate-reset-token', { email: email, token: token }, {
             headers: {
                 "Content-Type": "application/json"
             }
         });
-
-        if (!response.data || !response.data.success) {
-            notFound();
-        }
-
     } catch (error) {
         notFound();
     }

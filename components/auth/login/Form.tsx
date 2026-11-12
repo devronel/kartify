@@ -42,7 +42,9 @@ export default function Form() {
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const handleSubmit = async (e: React.SubmitEvent) => {
-      
+
+    if(isButtonLoading) return
+    
     e.preventDefault();
     
     try {
@@ -56,7 +58,6 @@ export default function Form() {
         password: '',
       })
       setErrors({})
-      setIsButtonLoading(false)
       router.push(callbackUrl);
       router.refresh();
 
@@ -87,6 +88,7 @@ export default function Form() {
           break;
       }
 
+    } finally {
       setIsButtonLoading(false)
     }
     

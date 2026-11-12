@@ -12,12 +12,12 @@ import apiClient, { isAxiosError } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
 import { ValidationErrorResponse } from "@/types/api-error";
 
-interface ResetPassword {
+type ResetPasswordProps = {
   email: string,
   token: string
 }
 
-export default function Form(props: ResetPassword) {
+export default function Form(props: ResetPasswordProps) {
   const [email, setEmail] = useState<string>(props.email);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,6 +39,9 @@ export default function Form(props: ResetPassword) {
   }
 
   const handleSubmit = async (e: React.SubmitEvent) => {
+
+    if(isButtonLoading) return
+
     e.preventDefault();
 
     try {
@@ -52,18 +55,16 @@ export default function Form(props: ResetPassword) {
 
       setIsButtonLoading(true);
 
-      const response = await apiClient.post('/api/reset-password', data, {
+      await apiClient.post('/api/reset-password', data, {
         headers: {
           "Content-Type": "application/json"
         }
       })
 
-      if(response.data.success){
-        setIsButtonLoading(false);
-        setSubmitted(true);
-      }
+      setSubmitted(true)
 
     } catch (err) {
+      
       if(err instanceof Error){
         if(!isAxiosError(err)){
           toast.add({
@@ -89,15 +90,11 @@ export default function Form(props: ResetPassword) {
         }
 
       }
+
+    } finally {
       setIsButtonLoading(false);
     }
     
-
-    // setIsButtonLoading(true);
-    // setTimeout(() => {
-    //   setIsButtonLoading(false);
-    //   setSubmitted(true);
-    // }, 1200);
   }
 
   if (submitted) {

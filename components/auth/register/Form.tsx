@@ -40,6 +40,9 @@ export default function Form() {
     }
 
     const handleSubmit = async (e: React.SubmitEvent) => {
+
+      if(isButtonLoading) return
+
       e.preventDefault();
       try {
         
@@ -53,19 +56,17 @@ export default function Form() {
           confirmPassword: data.confirmPassword
         }
 
-        const response = await register(userInfo)
+        await register(userInfo)
 
-        if(response.success){
-          setData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            password: '',
-            confirmPassword: ''
-          })
-          setErrors({})
-          setIsButtonLoading(false)
-        }
+        setData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        })
+        setErrors({})
+
       } catch (err) {
         if(err instanceof Error){
           
@@ -93,6 +94,8 @@ export default function Form() {
           }
 
         }
+
+      } finally {
         setIsButtonLoading(false)
       }
 

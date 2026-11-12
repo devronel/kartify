@@ -5,7 +5,6 @@ import apiClient, { ensureCsrfCookie } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { AuthContextType, AuthResponse, RegisterRequest, User } from "@/types/auth";
-import { useCart } from "./CartContext";
 
 
 type AuthProviderProps = {
@@ -19,7 +18,7 @@ export function AuthProvider({ children, authUser }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(authUser);
     const router = useRouter();
 
-    // --- Login user ---
+    // --- Login User ---
     async function authenticate(email: string, password: string): Promise<AuthResponse> {
         await ensureCsrfCookie();
         const response = await apiClient.post("/api/authenticate", { email, password }, {
@@ -28,12 +27,12 @@ export function AuthProvider({ children, authUser }: AuthProviderProps) {
             }
         });
 
-        setUser(response.data.payload);
+        setUser(response.data);
 
         return response.data;
     }
 
-    // --- Register new user ---
+    // --- Register new User ---
     async function register(data: RegisterRequest) {
 
         await ensureCsrfCookie();
@@ -43,11 +42,12 @@ export function AuthProvider({ children, authUser }: AuthProviderProps) {
             }
         });
 
-        setUser(response.data.payload);
+        setUser(response.data);
 
         return response.data
     }
 
+    // --- Logout User ---
     async function logout() {
         try {
             const response = await apiClient.post("/api/logout");

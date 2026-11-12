@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import apiClient, { ensureCsrfCookie } from "@/lib/api-client";
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { MailCheck } from "lucide-react";
-import apiClient, { ensureCsrfCookie, isAxiosError } from "@/lib/api-client";
 import { toast } from "@/components/ui/toast";
-import { ValidationErrorResponse } from "@/types/api-error";
 
 export default function Form() {
   const [email, setEmail] = useState("");
@@ -23,6 +22,9 @@ export default function Form() {
   }
 
   const handleSubmit = async (e: React.SubmitEvent) => {
+
+    if(isButtonLoading) return
+
     e.preventDefault();
 
     if (!email) {
@@ -34,22 +36,24 @@ export default function Form() {
       setIsButtonLoading(true);
 
       await ensureCsrfCookie()
-      const response = await apiClient.post("/api/forgot-password", { email: email }, {
+      
+      await apiClient.post("/api/forgot-password", { email: email }, {
         headers: {
           "Content-Type": "application/json"
         }
       })
 
-      if(response.data.success){
-        setIsButtonLoading(false);
-        setSubmitted(true);
-      }
+      setSubmitted(true);
+      
     } catch (err) {
+      
       toast.add({
         type: "error",
         description: "Unable to process your request at this time. Please try again later.",
         priority: "high",
       })
+
+    } finally {
       setIsButtonLoading(false);
     }
 

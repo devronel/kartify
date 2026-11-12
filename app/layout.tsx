@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
     const authUserResponse = await apiServer('/api/user')
     
-    user = authUserResponse.data.payload
+    user = authUserResponse.data
   
   } catch (error) {
     
